@@ -1,0 +1,45 @@
+@model List<PartyBalanceRow>
+@{
+    ViewData["Title"] = "Customers and suppliers";
+    var type = ViewBag.Type as PartyType?;
+    var inactive = (List<int>)ViewBag.Inactive;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+}
+<div class="page-head">
+    <div><h1>Customers and suppliers</h1><p class="sub">Tag voucher lines with a party to track who owes what. Balances are as of today.</p></div>
+    <div class="actions">
+        @if (canEdit)
+        {
+            <a class="btn btn-outline-primary" asp-action="Create" asp-route-type="Supplier">New supplier</a>
+            <a class="btn btn-primary" asp-action="Create" asp-route-type="Customer"><i class="bi bi-plus-lg"></i> New customer</a>
+        }
+    </div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">Search</label><input name="search" value="@ViewBag.Search" class="form-control" placeholder="Name or code" /></div>
+    <div><label class="form-label small">Type</label><select name="type" class="form-select"><option value="">All</option>@foreach (PartyType t in Enum.GetValues(typeof(PartyType))) { <option value="@t" selected="@(type == t)">@t</option> }</select></div>
+    <div><button class="btn btn-primary" type="submit">Filter</button></div>
+</form>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Code</th><th>Name</th><th>Type</th><th class="num">Balance</th><th class="num">Credit limit</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Code</td>
+                <td><a asp-action="Details" asp-route-id="@p.PartyId">@p.Name</a>
+                    @if (inactive.Contains(p.PartyId)) { <span class="chip st-draft ms-1">Inactive</span> }
+                    @if (p.OverLimit) { <span class="chip st-rejected ms-1">Over limit</span> }</td>
+                <td class="small-print">@p.Type</td>
+                <td class="num">@Fmt.DrCr(p.Balance)</td>
+                <td class="num muted">@Fmt.MoneyOrBlank(p.CreditLimit)</td>
+                <td class="text-end">@if (canEdit) { <a asp-action="Edit" asp-route-id="@p.PartyId" title="Edit"><i class="bi bi-pencil"></i></a> }</td>
+            </tr>
+        }
+        @if (!Model.Any()) { <tr><td colspan="6" class="empty"><i class="bi bi-people"></i>No parties match.</td></tr> }
+        </tbody>
+    </table>
+    </div>
+</div>

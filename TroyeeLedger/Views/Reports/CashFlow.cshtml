@@ -1,0 +1,38 @@
+@model CashFlowVm
+@{
+    ViewData["Title"] = "Cash flow statement";
+    var cats = new[] { CashFlowCategory.Operating, CashFlowCategory.Investing, CashFlowCategory.Financing };
+}
+<div class="page-head">
+    <div><h1>Cash flow statement</h1><p class="sub">Direct method, @Fmt.Date(Model.From) to @Fmt.Date(Model.To). Each cash movement is attributed to the account on the other side of the voucher.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="figures">
+    @foreach (var c in cats) { <div class="figure"><div class="label">Net @c.ToString().ToLower() cash</div><div class="value @(Model.Total(c) < 0 ? "cr" : "")">@Fmt.Signed(Model.Total(c))</div></div> }
+    <div class="figure"><div class="label">Net change in cash</div><div class="value">@Fmt.Signed(Model.NetChange)</div></div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <tbody>
+        <tr class="opening"><td>Cash and bank at @Fmt.Date(Model.From)</td><td class="num">@Fmt.Signed(Model.OpeningCash)</td></tr>
+        @foreach (var c in cats)
+        {
+            <tr class="group lvl-0"><td>@c activities</td><td class="num"></td></tr>
+            foreach (var l in Model.Lines.Where(x => x.Category == c))
+            {
+                <tr><td class="indent-1">@(l.Amount >= 0 ? "Received from" : "Paid for") @l.AccountName <span class="muted">(@l.AccountCode)</span></td><td class="num @(l.Amount < 0 ? "cr" : "dr")">@Fmt.Signed(l.Amount)</td></tr>
+            }
+            <tr><td class="indent-1 fw-semibold">Net cash from @c.ToString().ToLower() activities</td><td class="num fw-semibold">@Fmt.Signed(Model.Total(c))</td></tr>
+        }
+        </tbody>
+        <tfoot><tr><td>Cash and bank at @Fmt.Date(Model.To)</td><td class="num">@Fmt.Signed(Model.ComputedClosing)</td></tr></tfoot>
+    </table>
+    </div>
+</div>
+<p class="small-print">Check: closing cash per the ledger is @Fmt.Signed(Model.ClosingCash) @(Model.ClosingCash == Model.ComputedClosing ? "— matches." : "— differs; review vouchers that touch cash on both sides.")</p>

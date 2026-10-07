@@ -1,0 +1,5 @@
+@model RecurringFormVm
+@{ ViewData["Title"] = "New recurring voucher"; }
+<div class="page-head"><div><h1>New recurring voucher</h1><p class="sub">Define the entry once; the system generates it on each due date when you run due templates.</p></div></div>
+<form asp-action="Create" method="post"><partial name="_Form" model="Model" />
+    <button class="btn btn-primary" type="submit">Save template</button> <a class="btn btn-link" asp-action="Index">Cancel</a></form>

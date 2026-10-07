@@ -1,0 +1,42 @@
+@model DayBookVm
+@{ ViewData["Title"] = "Day book"; }
+<div class="page-head">
+    <div><h1>Day book</h1><p class="sub">The journal register: every posted voucher with all its lines, in date order.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><label class="form-label small">Type</label>
+        <select name="type" class="form-select"><option value="">All types</option>
+            @foreach (VoucherType t in Enum.GetValues(typeof(VoucherType))) { <option value="@t" selected="@(Model.Type == t)">@t</option> }
+        </select></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Date</th><th>Voucher</th><th>Particulars</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody>
+        @foreach (var v in Model.Vouchers)
+        {
+            var first = true;
+            foreach (var d in v.Details.OrderBy(x => x.Credit > 0).ThenBy(x => x.LineNo))
+            {
+                <tr class="@(v.Status == VoucherStatus.Reversed ? "reversed" : "")">
+                    <td>@(first ? Fmt.Date(v.VoucherDate) : "")</td>
+                    <td>@if (first) { <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@v.Id">@v.VoucherNo</a> }</td>
+                    <td class="@(d.Credit > 0 ? "indent-1" : "")">@(d.Credit > 0 ? "To " : "")@d.Account?.Name</td>
+                    <td class="num dr">@Fmt.MoneyOrBlank(d.Debit)</td>
+                    <td class="num cr">@Fmt.MoneyOrBlank(d.Credit)</td>
+                </tr>
+                first = false;
+            }
+            <tr><td></td><td></td><td colspan="3" class="small-print fst-italic">(@v.Narration)</td></tr>
+        }
+        @if (!Model.Vouchers.Any()) { <tr><td colspan="5" class="empty">No posted vouchers in this period.</td></tr> }
+        </tbody>
+        <tfoot><tr><td colspan="3">@Model.Vouchers.Count vouchers</td><td class="num dr">@Fmt.Money(Model.TotalAmount)</td><td class="num cr">@Fmt.Money(Model.TotalAmount)</td></tr></tfoot>
+    </table>
+    </div>
+</div>

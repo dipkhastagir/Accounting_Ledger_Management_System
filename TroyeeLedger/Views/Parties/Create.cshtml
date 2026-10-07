@@ -1,0 +1,9 @@
+@model Party
+@{ ViewData["Title"] = "New " + Model.PartyType.ToString().ToLower(); }
+<div class="page-head"><div><h1>New @Model.PartyType.ToString().ToLower()</h1></div></div>
+<div class="sheet" style="max-width:900px">
+    <form asp-action="Create" method="post">
+        <partial name="_PartyForm" model="Model" />
+        <div class="mt-4"><button class="btn btn-primary" type="submit">Save</button> <a class="btn btn-link" asp-action="Index">Cancel</a></div>
+    </form>
+</div>

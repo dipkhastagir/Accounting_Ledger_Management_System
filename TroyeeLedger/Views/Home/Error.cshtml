@@ -1,0 +1,8 @@
+@model string
+@{ ViewData["Title"] = "Something went wrong"; }
+<div class="sheet empty" style="max-width:600px;margin:3rem auto">
+    <i class="bi bi-exclamation-octagon"></i>
+    <h1 style="font-family:var(--font-title);font-weight:500">The request could not be completed</h1>
+    <p>Nothing was saved. Try again, and if it keeps happening, give this reference to your administrator: <span class="hash">@Model</span></p>
+    <a class="btn btn-primary" href="~/">Back to dashboard</a>
+</div>

@@ -1,0 +1,10 @@
+@model Party
+@{ ViewData["Title"] = "Edit " + Model.Name; }
+<div class="page-head"><div><h1>Edit @Model.Name</h1></div></div>
+<div class="sheet" style="max-width:900px">
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        <partial name="_PartyForm" model="Model" />
+        <div class="mt-4 d-flex gap-2"><button class="btn btn-primary" type="submit">Save changes</button> <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+            <a class="btn btn-outline-danger ms-auto" asp-action="Delete" asp-route-id="@Model.Id">Delete</a></div>
+    </form>
+</div>

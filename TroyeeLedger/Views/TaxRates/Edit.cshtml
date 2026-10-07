@@ -1,0 +1,5 @@
+@model TaxRate
+@{ ViewData["Title"] = "Edit " + Model.Name; }
+<div class="page-head"><div><h1>Edit @Model.Name</h1><p class="sub">Changing a rate affects new vouchers only; posted VAT lines keep their amounts.</p></div></div>
+<div class="sheet" style="max-width:820px"><form asp-action="Edit" asp-route-id="@Model.Id" method="post"><partial name="_Form" model="Model" />
+    <div class="mt-4"><button class="btn btn-primary" type="submit">Save changes</button> <a class="btn btn-link" asp-action="Index">Cancel</a></div></form></div>

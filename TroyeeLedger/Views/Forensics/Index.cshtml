@@ -1,0 +1,59 @@
+@model ForensicDashboardVm
+@{
+    ViewData["Title"] = "Forensic analytics";
+    DateTime from = ViewBag.From, to = ViewBag.To;
+    string J(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+}
+<div class="page-head">
+    <div><h1>Forensic analytics</h1><p class="sub">Continuous audit of the ledger: cryptographic integrity, Benford's law, explainable anomaly scoring and segregation of duties. Window: @Fmt.Date(from) – @Fmt.Date(to).</p></div>
+</div>
+<div class="figures">
+    <div class="figure"><a asp-action="Integrity"><div class="label">Ledger integrity</div><div class="value @(Model.Integrity.AllOk ? "st-good" : "st-bad")">@(Model.Integrity.AllOk ? "Verified" : Model.Integrity.Issues.Count + " issue(s)")</div><div class="note">@Model.Integrity.VouchersChecked sealed vouchers, @Model.Integrity.AuditRecordsChecked audit records</div></a></div>
+    <div class="figure"><a asp-action="Benford"><div class="label">Benford conformity</div><div class="value" style="font-size:1.2rem">@Model.Benford.Conformity</div><div class="note">MAD @Model.Benford.Mad.ToString("F4") · n = @Model.Benford.N</div></a></div>
+    <div class="figure"><a asp-action="Anomalies"><div class="label">Flagged transactions</div><div class="value">@Model.Anomalies.Items.Count</div><div class="note">@Model.Anomalies.CountHigh high, @Model.Anomalies.CountMedium medium of @Model.Anomalies.Scanned scanned</div></a></div>
+    <div class="figure"><a asp-action="Segregation"><div class="label">Self-approved vouchers</div><div class="value @(Model.SodViolations > 0 ? "st-warn" : "st-good")">@Model.SodViolations</div><div class="note">Segregation-of-duties exceptions</div></a></div>
+</div>
+<div class="row g-3">
+    <div class="col-xl-7">
+        <div class="sheet flush">
+            <div class="d-flex align-items-center" style="padding:1.1rem 1.35rem 0"><h2 class="sheet-title mb-0">Highest-risk transactions</h2><a class="ms-auto small" asp-action="Anomalies">All flags</a></div>
+            <div class="table-wrap">
+            <table class="ledger mt-2">
+                <thead><tr><th>Voucher</th><th>Why it was flagged</th><th class="num">Amount</th><th class="num">Score</th></tr></thead>
+                <tbody>
+                @foreach (var i in Model.Anomalies.Items.Take(8))
+                {
+                    <tr><td><a asp-controller="Vouchers" asp-action="Details" asp-route-id="@i.VoucherId">@i.VoucherNo</a><div class="small-print">@Fmt.Date(i.Date)</div></td>
+                        <td class="small">@string.Join(" · ", i.Reasons.Select(r => r.Rule))</td>
+                        <td class="num">@Fmt.Money(i.Amount)</td><td class="num"><span class="chip risk-@i.Level">@i.Score</span></td></tr>
+                }
+                @if (!Model.Anomalies.Items.Any()) { <tr><td colspan="4" class="empty">No medium or high-risk transactions in this window.</td></tr> }
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="sheet">
+            <h2>First-digit distribution</h2>
+            <div class="chart-box"><canvas id="benford"></canvas></div>
+        </div>
+        <div class="sheet">
+            <h2>Which rules fire most</h2>
+            @foreach (var kv in Model.Anomalies.RuleCounts)
+            {
+                <div class="d-flex small mb-1"><span>@kv.Key</span><span class="ms-auto num">@kv.Value</span></div>
+            }
+            @if (!Model.Anomalies.RuleCounts.Any()) { <p class="small-print mb-0">No rules triggered.</p> }
+        </div>
+    </div>
+</div>
+@section Scripts {
+<script>
+new Chart(document.getElementById("benford"), { type: "bar",
+  data: { labels: [1,2,3,4,5,6,7,8,9],
+    datasets: [ { label: "Observed", data: @Html.Raw(J(Model.Benford.Digits.Select(d => Math.Round(d.Observed * 100, 2)))), backgroundColor: "#1E4636" },
+                { label: "Benford expected", type: "line", data: @Html.Raw(J(Model.Benford.Digits.Select(d => Math.Round(d.Expected * 100, 2)))), borderColor: "#A9792B", backgroundColor: "#A9792B", pointRadius: 3 } ] },
+  options: { scales: { y: { ticks: { callback: v => v + "%" } } } } });
+</script>
+}

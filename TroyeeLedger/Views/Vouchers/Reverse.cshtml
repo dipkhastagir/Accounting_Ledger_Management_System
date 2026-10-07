@@ -1,0 +1,14 @@
+@model ReverseVm
+@{ ViewData["Title"] = "Reverse " + Model.VoucherNo; }
+<div class="page-head"><div><h1>Reverse @Model.VoucherNo</h1><p class="sub">Posted vouchers are never edited or deleted. A reversal posts the exact opposite entry so the ledger shows both the mistake and its correction.</p></div></div>
+<div class="sheet" style="max-width:640px">
+    <form asp-action="Reverse" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+        <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="VoucherNo" /><input type="hidden" asp-for="Amount" />
+        <p>Amount to reverse: <strong>@Fmt.Money(Model.Amount)</strong></p>
+        <div class="mb-3"><label asp-for="ReversalDate" class="form-label"></label><input asp-for="ReversalDate" type="date" class="form-control" style="max-width:220px" /></div>
+        <div class="mb-4"><label asp-for="Reason" class="form-label"></label><textarea asp-for="Reason" class="form-control" rows="3" placeholder="e.g. Posted to the wrong expense account"></textarea><span asp-validation-for="Reason" class="text-danger small"></span></div>
+        <button class="btn btn-danger" type="submit">Post reversal</button>
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+</div>

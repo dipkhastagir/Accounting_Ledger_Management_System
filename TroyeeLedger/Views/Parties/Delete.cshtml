@@ -1,0 +1,11 @@
+@model Party
+@{ ViewData["Title"] = "Delete " + Model.Name; var inUse = (int)ViewBag.InUse; }
+<div class="page-head"><div><h1>Delete @Model.Name?</h1></div></div>
+<div class="sheet" style="max-width:640px">
+    @if (inUse > 0) { <p>This party appears on @inUse voucher line(s). It will be <strong>marked inactive</strong> instead of deleted, so its history stays intact.</p> }
+    else { <p>This party has no transactions and will be removed permanently.</p> }
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+        <button class="btn btn-danger" type="submit">@(inUse > 0 ? "Mark inactive" : "Delete")</button>
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+</div>

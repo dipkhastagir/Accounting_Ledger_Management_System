@@ -1,0 +1,35 @@
+@model CompanySetting
+@{ ViewData["Title"] = "Settings"; }
+<div class="page-head"><div><h1>Settings</h1><p class="sub">Company details and the controls that govern posting and forensic scoring.</p></div></div>
+<form asp-action="Index" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+    <input type="hidden" asp-for="Id" />
+    <div class="sheet">
+        <h2>Company</h2>
+        <div class="row g-3">
+            <div class="col-md-6"><label asp-for="CompanyName" class="form-label"></label><input asp-for="CompanyName" class="form-control" /><span asp-validation-for="CompanyName" class="text-danger small"></span></div>
+            <div class="col-md-3"><label asp-for="TaxId" class="form-label"></label><input asp-for="TaxId" class="form-control" /></div>
+            <div class="col-md-3"><label asp-for="CurrencySymbol" class="form-label"></label><input asp-for="CurrencySymbol" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Address" class="form-label"></label><input asp-for="Address" class="form-control" /></div>
+            <div class="col-md-3"><label asp-for="Phone" class="form-label"></label><input asp-for="Phone" class="form-control" /></div>
+            <div class="col-md-3"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /></div>
+        </div>
+    </div>
+    <div class="sheet">
+        <h2>Internal control</h2>
+        <div class="form-check mb-2"><input asp-for="RequireApproval" class="form-check-input" /><label asp-for="RequireApproval" class="form-check-label"></label>
+            <div class="form-text">When off, saving a voucher posts it immediately.</div></div>
+        <div class="form-check"><input asp-for="EnforceSegregationOfDuties" class="form-check-input" /><label asp-for="EnforceSegregationOfDuties" class="form-check-label"></label>
+            <div class="form-text">When on, the person who entered a voucher cannot approve it.</div></div>
+    </div>
+    <div class="sheet">
+        <h2>Forensic scoring</h2>
+        <div class="row g-3">
+            <div class="col-md-3"><label asp-for="AnomalyZThreshold" class="form-label"></label><input asp-for="AnomalyZThreshold" type="number" step="0.1" class="form-control" /><div class="form-text">Lower flags more outliers. 3.0 is conventional.</div><span asp-validation-for="AnomalyZThreshold" class="text-danger small"></span></div>
+            <div class="col-md-3"><label asp-for="LargeAmountThreshold" class="form-label"></label><input asp-for="LargeAmountThreshold" type="number" step="1" class="form-control" /></div>
+            <div class="col-md-3"><label asp-for="BackdateToleranceDays" class="form-label"></label><input asp-for="BackdateToleranceDays" type="number" class="form-control" /><span asp-validation-for="BackdateToleranceDays" class="text-danger small"></span></div>
+            <div class="col-md-3"><label asp-for="WeekendDays" class="form-label"></label><input asp-for="WeekendDays" class="form-control" /><div class="form-text">English day names, e.g. Friday,Saturday</div></div>
+        </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Save settings</button>
+</form>

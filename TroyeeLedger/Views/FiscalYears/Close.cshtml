@@ -1,0 +1,21 @@
+@model FiscalYear
+@{
+    ViewData["Title"] = "Close " + Model.Name;
+    decimal income = ViewBag.Income, expense = ViewBag.Expense;
+    int pending = ViewBag.Pending;
+}
+<div class="page-head"><div><h1>Close @Model.Name</h1><p class="sub">@Fmt.Date(Model.StartDate) – @Fmt.Date(Model.EndDate)</p></div></div>
+<div class="sheet" style="max-width:720px">
+    <p>Closing posts one sealed journal dated @Fmt.Date(Model.EndDate) that brings every income and expense account to zero and transfers the result to Retained Earnings (3002). Afterwards no voucher can be posted into this year until it is reopened.</p>
+    <table class="ledger mb-3">
+        <tbody>
+            <tr><td>Income for the year</td><td class="num">@Fmt.Money(income)</td></tr>
+            <tr><td>Expenses for the year</td><td class="num">@Fmt.Money(expense)</td></tr>
+        </tbody>
+        <tfoot><tr><td>@(income - expense >= 0 ? "Profit" : "Loss") to retained earnings</td><td class="num">@Fmt.Signed(income - expense)</td></tr></tfoot>
+    </table>
+    @if (pending > 0) { <div class="alert alert-warning">@pending draft, pending or returned voucher(s) are dated in this year. Pending ones block closing; drafts will simply stay unposted.</div> }
+    <form asp-action="Close" asp-route-id="@Model.Id" method="post" data-confirm="Close @Model.Name now?">
+        <button class="btn btn-primary" type="submit">Close fiscal year</button> <a class="btn btn-link" asp-action="Index">Cancel</a>
+    </form>
+</div>

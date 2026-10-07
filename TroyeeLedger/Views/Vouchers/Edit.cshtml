@@ -1,0 +1,8 @@
+@model VoucherFormVm
+@{ ViewData["Title"] = "Edit " + Model.VoucherNo; }
+<div class="page-head">
+    <div><h1>Edit @Model.VoucherNo</h1><p class="sub">Drafts and returned vouchers can be changed freely until they are approved.</p></div>
+</div>
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="voucher-form">
+    <partial name="_VoucherForm" model="Model" />
+</form>

@@ -1,0 +1,14 @@
+@model StatementImportVm
+@{ ViewData["Title"] = "Import bank statement"; var banks = (List<SelectListItem>)ViewBag.Banks; }
+<div class="page-head"><div><h1>Import bank statement</h1><p class="sub">Paste lines exported from internet banking. One transaction per line.</p></div></div>
+<div class="sheet" style="max-width:860px">
+    <form asp-action="Import" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+        <div class="mb-3"><label asp-for="BankAccountId" class="form-label"></label><select asp-for="BankAccountId" asp-items="banks" class="form-select" style="max-width:420px"></select></div>
+        <div class="mb-2"><label asp-for="CsvText" class="form-label"></label>
+            <textarea asp-for="CsvText" class="form-control hash" rows="12" placeholder="date,description,reference,amount&#10;2026-09-03,Cheque 108840 cleared,CHQ-108840,-236900.00&#10;2026-09-05,EFT from Meghna Textiles,EFT-551201,184000.00"></textarea>
+            <span asp-validation-for="CsvText" class="text-danger small"></span></div>
+        <p class="small-print">Columns: date (yyyy-MM-dd or dd/MM/yyyy), description, reference, amount. Deposits are positive, withdrawals negative. A header row is ignored.</p>
+        <button class="btn btn-primary" type="submit">Import lines</button> <a class="btn btn-link" asp-action="Index" asp-route-accountId="@Model.BankAccountId">Cancel</a>
+    </form>
+</div>

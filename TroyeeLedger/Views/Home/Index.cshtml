@@ -1,0 +1,141 @@
+@model DashboardVm
+@{
+    ViewData["Title"] = "Dashboard";
+    var cur = ViewData["Currency"] as string ?? "Tk";
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+    string J(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+}
+<div class="page-head">
+    <div>
+        <h1>@Model.CompanyName</h1>
+        <p class="sub">Position as of @Fmt.Date(DateTime.Today). All figures in @cur, computed live from the posted ledger.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-primary" asp-controller="Reports" asp-action="TrialBalance">Trial balance</a>
+        <a class="btn btn-outline-primary" asp-controller="Forensics" asp-action="Index">Forensic review</a>
+    </div>
+</div>
+
+<div class="figures">
+    <div class="figure"><a asp-controller="Ledger" asp-action="CashBook"><div class="label">Cash and bank</div><div class="value">@Fmt.Money(Model.CashAndBank)</div><div class="note">@Model.CashAccounts.Count accounts</div></a></div>
+    <div class="figure"><a asp-controller="Reports" asp-action="PartyBalances" asp-route-type="Customer"><div class="label">Owed to us</div><div class="value dr">@Fmt.Money(Model.Receivables)</div><div class="note">Accounts receivable</div></a></div>
+    <div class="figure"><a asp-controller="Reports" asp-action="PartyBalances" asp-route-type="Supplier"><div class="label">We owe</div><div class="value cr">@Fmt.Money(Model.Payables)</div><div class="note">Accounts payable</div></a></div>
+    <div class="figure"><a asp-controller="Reports" asp-action="ProfitLoss"><div class="label">Profit this fiscal year</div><div class="value @(Model.YearProfit < 0 ? "cr" : "")">@Fmt.Signed(Model.YearProfit)</div><div class="note">Income less expenses since 1 July</div></a></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="sheet">
+            <div class="d-flex align-items-baseline mb-2">
+                <h2 class="sheet-title mb-0">Income and expenses, last 12 months</h2>
+                <span class="small-print ms-auto">This month: income @Fmt.Money(Model.MonthIncome), expenses @Fmt.Money(Model.MonthExpense)</span>
+            </div>
+            <div class="chart-box"><canvas id="monthly"></canvas></div>
+        </div>
+        <div class="sheet flush">
+            <div class="d-flex align-items-center" style="padding:1.1rem 1.35rem 0">
+                <h2 class="sheet-title mb-0">Latest vouchers</h2>
+                <a class="ms-auto small" asp-controller="Vouchers" asp-action="Index">All vouchers</a>
+            </div>
+            <div class="table-wrap mt-2">
+            <table class="ledger">
+                <thead><tr><th>Voucher</th><th>Date</th><th>Narration</th><th>Status</th><th class="num">Amount</th></tr></thead>
+                <tbody>
+                @foreach (var v in Model.Recent)
+                {
+                    <tr>
+                        <td><a asp-controller="Vouchers" asp-action="Details" asp-route-id="@v.Id">@v.VoucherNo</a></td>
+                        <td>@Fmt.Date(v.VoucherDate)</td>
+                        <td class="small-print">@v.Narration</td>
+                        <td><span class="chip @Fmt.StatusCss(v.Status)">@v.Status.Display()</span></td>
+                        <td class="num">@Fmt.Money(v.TotalAmount)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="sheet">
+            <h2>Needs attention</h2>
+            <div class="check">
+                <i class="bi @(Model.IntegrityOk ? "bi-shield-check st-good" : "bi-shield-exclamation st-bad")"></i>
+                <div>
+                    <div class="fw-semibold">@(Model.IntegrityOk ? "Ledger integrity verified" : "Integrity check failed")</div>
+                    <div class="small-print">@Model.ChainLength sealed vouchers · head <span class="hash">@Fmt.ShortHash(Model.ChainHead)</span></div>
+                    <a class="small" asp-controller="Forensics" asp-action="Integrity">Open integrity report</a>
+                </div>
+            </div>
+            <div class="check">
+                <i class="bi bi-hourglass-split @(Model.PendingApprovals > 0 ? "st-warn" : "st-good")"></i>
+                <div>
+                    <div class="fw-semibold">@Model.PendingApprovals voucher(s) awaiting approval</div>
+                    @if (canEdit) { <a class="small" asp-controller="Vouchers" asp-action="Approvals">Review approvals</a> }
+                </div>
+            </div>
+            <div class="check">
+                <i class="bi bi-flag @(Model.HighRisk > 0 ? "st-bad" : "st-good")"></i>
+                <div>
+                    <div class="fw-semibold">@Model.HighRisk high-risk transaction(s) this fiscal year</div>
+                    <a class="small" asp-controller="Forensics" asp-action="Anomalies" asp-route-level="High">See why they were flagged</a>
+                </div>
+            </div>
+            <div class="check">
+                <i class="bi bi-pencil-square @(Model.Drafts > 0 ? "st-warn" : "st-good")"></i>
+                <div>
+                    <div class="fw-semibold">@Model.Drafts draft or returned voucher(s)</div>
+                    <a class="small" asp-controller="Vouchers" asp-action="Index" asp-route-status="Draft">Open drafts</a>
+                </div>
+            </div>
+            <div class="check">
+                <i class="bi bi-arrow-repeat @(Model.DueRecurring > 0 ? "st-warn" : "st-good")"></i>
+                <div>
+                    <div class="fw-semibold">@Model.DueRecurring recurring voucher(s) due</div>
+                    <a class="small" asp-controller="Recurring" asp-action="Index">Open recurring vouchers</a>
+                </div>
+            </div>
+        </div>
+        <div class="sheet">
+            <h2>Cash position</h2>
+            <table class="ledger">
+                <tbody>
+                @foreach (var c in Model.CashAccounts)
+                {
+                    <tr><td><a asp-controller="Ledger" asp-action="Account" asp-route-id="@c.AccountId">@c.Name</a></td><td class="num">@Fmt.Signed(c.Natural)</td></tr>
+                }
+                </tbody>
+                <tfoot><tr><td>Total</td><td class="num">@Fmt.Money(Model.CashAndBank)</td></tr></tfoot>
+            </table>
+        </div>
+        <div class="sheet">
+            <h2>Largest expenses this year</h2>
+            @{ var maxExp = Model.TopExpenses.Any() ? Model.TopExpenses.Max(e => e.Value) : 1; }
+            @foreach (var e in Model.TopExpenses)
+            {
+                <div class="mb-2">
+                    <div class="d-flex small"><span>@e.Key</span><span class="ms-auto num">@Fmt.Money(e.Value)</span></div>
+                    <div class="bar"><span style="width:@((maxExp == 0 ? 0 : e.Value / maxExp * 100).ToString("F0", System.Globalization.CultureInfo.InvariantCulture))%"></span></div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    new Chart(document.getElementById("monthly"), {
+        type: "bar",
+        data: {
+            labels: @Html.Raw(J(Model.Months.Select(m => m.Label))),
+            datasets: [
+                { label: "Income", data: @Html.Raw(J(Model.Months.Select(m => m.Income))), backgroundColor: "#1E4636" },
+                { label: "Expenses", data: @Html.Raw(J(Model.Months.Select(m => m.Expense))), backgroundColor: "#C9A86A" },
+                { label: "Net", type: "line", data: @Html.Raw(J(Model.Months.Select(m => m.Net))), borderColor: "#23497F", backgroundColor: "#23497F", tension: .25, pointRadius: 3 }
+            ]
+        },
+        options: { scales: { y: { ticks: { callback: v => Math.round(v / 1000).toLocaleString("en-US") + "k" } } },
+                   plugins: { tooltip: { callbacks: { label: c => c.dataset.label + ": " + TL.fmt(c.raw) } } } }
+    });
+</script>
+}

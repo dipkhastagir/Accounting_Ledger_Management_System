@@ -1,0 +1,64 @@
+@model List<AccountBalanceRow>
+@{
+    ViewData["Title"] = "Chart of accounts";
+    var type = ViewBag.Type as AccountType?;
+    var inactive = (List<int>)ViewBag.Inactive;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+}
+<div class="page-head">
+    <div>
+        <h1>Chart of accounts</h1>
+        <p class="sub">@Model.Count(r => !r.IsGroup) posting accounts in @Model.Count(r => r.IsGroup) groups. Balances are as of today; group balances roll up their sub-accounts.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-primary" asp-action="Index" asp-route-type="@type" asp-route-export="csv"><i class="bi bi-download"></i> Export CSV</a>
+        @if (canEdit) { <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New account</a> }
+    </div>
+</div>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a class="btn btn-sm @(type == null ? "btn-primary" : "btn-outline-primary")" asp-action="Index">All</a>
+    @foreach (AccountType t in Enum.GetValues(typeof(AccountType)))
+    {
+        <a class="btn btn-sm @(type == t ? "btn-primary" : "btn-outline-primary")" asp-action="Index" asp-route-type="@t">@t</a>
+    }
+</div>
+
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead>
+            <tr><th style="width:90px">Code</th><th>Account</th><th>Type</th><th>Flags</th><th class="num">Debits</th><th class="num">Credits</th><th class="num">Balance</th><th></th></tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr class="@(r.IsGroup ? "group" : "") lvl-@r.Level">
+                <td>@r.Code</td>
+                <td class="indent-@Math.Min(r.Level, 4)">
+                    @if (r.IsGroup) { <i class="bi bi-folder2 muted me-1"></i> }
+                    <a asp-action="Details" asp-route-id="@r.AccountId">@r.Name</a>
+                    @if (inactive.Contains(r.AccountId)) { <span class="chip st-draft ms-1">Inactive</span> }
+                </td>
+                <td class="small-print">@r.Type</td>
+                <td class="small-print">
+                    @if (r.IsCashOrBank) { <span title="Cash or bank"><i class="bi bi-cash"></i> Cash/bank</span> }
+                    @if (!r.IsCurrent && !r.IsGroup) { <span>Non-current</span> }
+                </td>
+                <td class="num dr">@Fmt.MoneyOrBlank(r.Debit)</td>
+                <td class="num cr">@Fmt.MoneyOrBlank(r.Credit)</td>
+                <td class="num">@Fmt.Signed(r.Natural)</td>
+                <td class="text-end">
+                    @if (canEdit)
+                    {
+                        @if (r.IsGroup) { <a class="small" asp-action="Create" asp-route-parentId="@r.AccountId" title="Add sub-account"><i class="bi bi-plus-circle"></i></a> }
+                        <a class="small ms-2" asp-action="Edit" asp-route-id="@r.AccountId" title="Edit"><i class="bi bi-pencil"></i></a>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    </div>
+</div>
+<p class="small-print">Balances are shown in each account's natural direction: debit for assets and expenses, credit for liabilities, equity and income. Figures in brackets run against that direction (for example accumulated depreciation).</p>

@@ -1,0 +1,47 @@
+@model List<FiscalYear>
+@{
+    ViewData["Title"] = "Fiscal years";
+    var counts = (Dictionary<int, int>)ViewBag.Counts;
+    bool isAdmin = User.IsInRole("Admin");
+}
+<div class="page-head">
+    <div><h1>Fiscal years</h1><p class="sub">Vouchers can only be posted into an open year. Closing a year moves its profit or loss into retained earnings and locks it.</p></div>
+    <div class="actions">@if (isAdmin) { <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New fiscal year</a> }</div>
+</div>
+<div class="sheet flush">
+    <table class="ledger">
+        <thead><tr><th>Year</th><th>Period</th><th class="num">Posted vouchers</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var y in Model)
+        {
+            bool current = y.StartDate <= DateTime.Today && y.EndDate >= DateTime.Today;
+            <tr>
+                <td class="fw-semibold">@y.Name @if (current) { <span class="chip st-pending ms-1">Current</span> }</td>
+                <td>@Fmt.Date(y.StartDate) – @Fmt.Date(y.EndDate)</td>
+                <td class="num">@counts[y.Id]</td>
+                <td>
+                    @if (y.IsClosed)
+                    {
+                        <span class="chip st-reversed">Closed</span> <span class="small-print">by @y.ClosedBy, @Fmt.Date(y.ClosedAt)</span>
+                        @if (y.ClosingVoucherId.HasValue) { <a class="small ms-1" asp-controller="Vouchers" asp-action="Details" asp-route-id="@y.ClosingVoucherId">closing entry</a> }
+                    }
+                    else { <span class="chip st-posted">Open</span> }
+                </td>
+                <td class="text-end">
+                    @if (isAdmin)
+                    {
+                        if (y.IsClosed)
+                        {
+                            <form asp-action="Reopen" asp-route-id="@y.Id" method="post" class="d-inline" data-confirm="Reopen @y.Name? Its closing entry will be reversed."><button class="btn btn-sm btn-outline-primary" type="submit">Reopen</button></form>
+                        }
+                        else
+                        {
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Close" asp-route-id="@y.Id">Close year…</a>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

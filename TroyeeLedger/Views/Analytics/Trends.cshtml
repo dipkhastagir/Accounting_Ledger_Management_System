@@ -1,0 +1,52 @@
+@model TrendVm
+@{
+    ViewData["Title"] = "Trends and forecast";
+    string J(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+    var labels = Model.Months.Select(m => m.Label).Concat(Model.Forecast.Select(f => f.Label)).ToList();
+    var actualNet = Model.Months.Select(m => (decimal?)m.Net).Concat(Model.Forecast.Select(_ => (decimal?)null)).ToList();
+    var fitted = Enumerable.Range(0, Model.Months.Count + Model.Forecast.Count).Select(i => Math.Round(Model.Intercept + Model.Slope * i, 0)).ToList();
+}
+<div class="page-head">
+    <div><h1>Trends and forecast</h1><p class="sub">Twelve months to @Fmt.Date(Model.AsOf), with a three-month projection of net profit from an ordinary least-squares trend line.</p></div>
+    <form method="get" class="actions filters"><input type="date" name="asOf" value="@Fmt.Iso(Model.AsOf)" class="form-control" /><button class="btn btn-primary" type="submit">Update</button></form>
+</div>
+<div class="figures">
+    <div class="figure"><div class="label">Trend per month</div><div class="value @(Model.Slope < 0 ? "cr" : "")">@Fmt.Signed((decimal)Model.Slope)</div><div class="note">Change in net profit each month</div></div>
+    <div class="figure"><div class="label">Fit (R²)</div><div class="value">@Model.RSquared.ToString("F2")</div><div class="note">@(Model.RSquared < 0.3 ? "Weak trend — treat the forecast as indicative" : "Trend explains much of the variation")</div></div>
+    @foreach (var f in Model.Forecast) { <div class="figure"><div class="label">Forecast @f.Label</div><div class="value">@Fmt.Signed(f.Income)</div><div class="note">Projected net profit</div></div> }
+</div>
+<div class="sheet"><h2>Net profit and trend</h2><div class="chart-box tall"><canvas id="net"></canvas></div></div>
+<div class="row g-3">
+    <div class="col-xl-7"><div class="sheet"><h2>Month-end cash and bank</h2><div class="chart-box"><canvas id="cash"></canvas></div></div></div>
+    <div class="col-xl-5"><div class="sheet"><h2>Where the money went</h2><div class="chart-box"><canvas id="mix"></canvas></div></div></div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Month</th><th class="num">Income</th><th class="num">Expenses</th><th class="num">Net</th><th class="num">Cash at month end</th></tr></thead>
+        <tbody>
+        @for (int i = 0; i < Model.Months.Count; i++)
+        {
+            var m = Model.Months[i];
+            <tr><td>@m.Label</td><td class="num">@Fmt.Money(m.Income)</td><td class="num">@Fmt.Money(m.Expense)</td><td class="num @(m.Net < 0 ? "cr" : "")">@Fmt.Signed(m.Net)</td><td class="num">@Fmt.Signed(Model.CashBalances[i])</td></tr>
+        }
+        </tbody>
+    </table>
+    </div>
+</div>
+@section Scripts {
+<script>
+const money = { callbacks: { label: c => c.dataset.label + ": " + TL.fmt(c.raw) } };
+new Chart(document.getElementById("net"), { type: "bar",
+  data: { labels: @Html.Raw(J(labels)), datasets: [
+    { label: "Actual net profit", data: @Html.Raw(J(actualNet)), backgroundColor: "#1E4636" },
+    { label: "Trend and forecast", type: "line", data: @Html.Raw(J(fitted)), borderColor: "#A9792B", borderDash: [6, 4], pointRadius: 2, backgroundColor: "#A9792B" } ] },
+  options: { plugins: { tooltip: money } } });
+new Chart(document.getElementById("cash"), { type: "line",
+  data: { labels: @Html.Raw(J(Model.Months.Select(m => m.Label))), datasets: [ { label: "Cash and bank", data: @Html.Raw(J(Model.CashBalances)), borderColor: "#23497F", backgroundColor: "rgba(35,73,127,.08)", fill: true, tension: .25 } ] },
+  options: { plugins: { tooltip: money } } });
+new Chart(document.getElementById("mix"), { type: "doughnut",
+  data: { labels: @Html.Raw(J(Model.ExpenseMix.Select(e => e.Key))), datasets: [ { data: @Html.Raw(J(Model.ExpenseMix.Select(e => e.Value))), backgroundColor: TL.palette } ] },
+  options: { plugins: { legend: { position: "right" }, tooltip: { callbacks: { label: c => c.label + ": " + TL.fmt(c.raw) } } } } });
+</script>
+}

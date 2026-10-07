@@ -1,0 +1,12 @@
+@model ChartOfAccount
+@{ ViewData["Title"] = "New account"; }
+<div class="page-head"><div><h1>New account</h1><p class="sub">Place the account under a group so it appears in the right section of every statement.</p></div></div>
+<div class="sheet" style="max-width:900px">
+    <form asp-action="Create" method="post">
+        <partial name="_AccountForm" model="Model" />
+        <div class="mt-4">
+            <button class="btn btn-primary" type="submit">Create account</button>
+            <a class="btn btn-link" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</div>

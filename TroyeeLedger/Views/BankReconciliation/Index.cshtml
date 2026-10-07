@@ -1,0 +1,103 @@
+@model ReconcileVm
+@{
+    ViewData["Title"] = "Bank reconciliation";
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+    var unmatchedBook = Model.BookEntries.Where(e => !e.IsReconciled).ToList();
+}
+<div class="page-head">
+    <div><h1>Bank reconciliation</h1><p class="sub">Match the bank's statement against the ledger. Anything left over is either in transit or missing from the books.</p></div>
+    <div class="actions">
+        @if (canEdit)
+        {
+            <a class="btn btn-outline-primary" asp-action="Import" asp-route-accountId="@Model.Account.Id"><i class="bi bi-upload"></i> Import statement</a>
+            <form asp-action="AutoMatch" method="post" class="d-inline"><input type="hidden" name="accountId" value="@Model.Account.Id" /><button class="btn btn-primary" type="submit"><i class="bi bi-magic"></i> Auto-match</button></form>
+        }
+    </div>
+</div>
+<form method="get" class="sheet filters">
+    <div style="min-width:280px"><label class="form-label small">Account</label>
+        <select name="accountId" class="form-select">@foreach (var b in Model.BankAccounts) { <option value="@b.Id" selected="@(b.Id == Model.Account.Id)">@b.Code — @b.Name</option> }</select></div>
+    <div><label class="form-label small">As of</label><input type="date" name="asOf" value="@Fmt.Iso(Model.AsOf)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Show</button></div>
+</form>
+
+<div class="sheet">
+    <h2>Reconciliation summary</h2>
+    <table class="ledger" style="max-width:680px">
+        <tbody>
+            <tr><td>Balance per books</td><td class="num">@Fmt.Signed(Model.BookBalance)</td></tr>
+            <tr><td class="indent-1">Less: book entries not yet on the statement (@unmatchedBook.Count)</td><td class="num">@Fmt.Signed(-Model.UnreconciledBook)</td></tr>
+            <tr><td class="indent-1">Add: statement items not yet in the books (@Model.StatementLines.Count(s => !s.IsMatched))</td><td class="num">@Fmt.Signed(Model.UnmatchedStatement)</td></tr>
+        </tbody>
+        <tfoot><tr><td>Balance the bank statement should show</td><td class="num">@Fmt.Signed(Model.ReconciledBalance + Model.UnmatchedStatement)</td></tr></tfoot>
+    </table>
+    <p class="small-print mt-2 mb-0">Unmatched statement items such as bank charges or interest usually need a new voucher.</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="sheet flush">
+            <h2>Bank statement</h2>
+            <div class="table-wrap">
+            <table class="ledger mt-2">
+                <thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var s in Model.StatementLines)
+                {
+                    <tr class="@(s.IsMatched ? "" : "table-warning")">
+                        <td>@Fmt.Date(s.TxnDate)</td>
+                        <td class="small">@s.Description<div class="small-print">@s.Reference</div></td>
+                        <td class="num @(s.Amount < 0 ? "cr" : "dr")">@Fmt.Signed(s.Amount)</td>
+                        <td class="text-nowrap">
+                            @if (s.IsMatched)
+                            {
+                                <span class="chip st-posted">Matched</span>
+                                @if (canEdit) { <form asp-action="Unmatch" method="post" class="d-inline"><input type="hidden" name="accountId" value="@Model.Account.Id" /><input type="hidden" name="statementLineId" value="@s.Id" /><button class="btn btn-sm btn-link p-0 ms-1" type="submit" title="Undo match"><i class="bi bi-x"></i></button></form> }
+                            }
+                            else if (canEdit)
+                            {
+                                var candidates = unmatchedBook.Where(e => e.Debit - e.Credit == s.Amount).ToList();
+                                if (candidates.Any())
+                                {
+                                    <form asp-action="Match" method="post" class="d-inline-flex gap-1">
+                                        <input type="hidden" name="accountId" value="@Model.Account.Id" /><input type="hidden" name="statementLineId" value="@s.Id" />
+                                        <select name="ledgerEntryId" class="form-select form-select-sm" style="max-width:160px">@foreach (var c in candidates) { <option value="@c.Id">@c.Voucher?.VoucherNo (@c.EntryDate.ToString("dd MMM"))</option> }</select>
+                                        <button class="btn btn-sm btn-outline-primary" type="submit">Match</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="DeleteLine" method="post" class="d-inline" data-confirm="Remove this statement line?"><input type="hidden" name="accountId" value="@Model.Account.Id" /><input type="hidden" name="statementLineId" value="@s.Id" /><button class="btn btn-sm btn-link text-danger p-0" type="submit">Remove</button></form>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.StatementLines.Any()) { <tr><td colspan="4" class="empty">No statement imported for this account.</td></tr> }
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="sheet flush">
+            <h2>Ledger entries <span class="small-print">(@unmatchedBook.Count unreconciled)</span></h2>
+            <div class="table-wrap">
+            <table class="ledger mt-2">
+                <thead><tr><th>Date</th><th>Voucher</th><th class="num">Debit</th><th class="num">Credit</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var e in Model.BookEntries.Take(150))
+                {
+                    <tr class="@(e.IsReconciled ? "" : "table-warning")">
+                        <td>@Fmt.Date(e.EntryDate)</td>
+                        <td><a asp-controller="Vouchers" asp-action="Details" asp-route-id="@e.VoucherId">@e.Voucher?.VoucherNo</a><div class="small-print">@e.Narration</div></td>
+                        <td class="num dr">@Fmt.MoneyOrBlank(e.Debit)</td><td class="num cr">@Fmt.MoneyOrBlank(e.Credit)</td>
+                        <td>@if (e.IsReconciled) { <i class="bi bi-check2 st-good" title="Reconciled"></i> }</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+</div>

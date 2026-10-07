@@ -1,0 +1,85 @@
+@model VoucherFormVm
+@{
+    var taxes = (List<TaxRate>)ViewBag.TaxRates;
+    bool requireApproval = (bool)ViewBag.RequireApproval;
+    var templateRow = new VoucherLineRowVm { Index = "__i__" };
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+@if (!string.IsNullOrEmpty(Model.RejectionReason))
+{
+    <div class="alert alert-warning"><i class="bi bi-reply"></i> Returned by the approver: <strong>@Model.RejectionReason</strong></div>
+}
+<div class="sheet">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label asp-for="VoucherType" class="form-label"></label>
+            <select asp-for="VoucherType" asp-items="Html.GetEnumSelectList<VoucherType>()" class="form-select" data-voucher-type></select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="VoucherDate" class="form-label"></label>
+            <input asp-for="VoucherDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Reference" class="form-label"></label>
+            <input asp-for="Reference" class="form-control" placeholder="Optional" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Voucher no</label>
+            <input class="form-control" value="@(Model.VoucherNo ?? "Assigned on save")" disabled />
+        </div>
+        <div class="col-12">
+            <label asp-for="Narration" class="form-label"></label>
+            <input asp-for="Narration" class="form-control" placeholder="What is this transaction for?" />
+        </div>
+        <div class="col-12"><div class="type-hint" id="type-hint"></div></div>
+    </div>
+</div>
+
+<div class="sheet flush">
+    <div class="table-wrap" data-line-editor data-template="line-template">
+        <table class="voucher-lines w-100">
+            <thead>
+                <tr class="small text-secondary">
+                    <th></th><th class="px-2 pt-3">Account <span class="muted fw-normal">(◆ cash/bank)</span></th><th class="px-2 pt-3 text-end">Debit</th><th class="px-2 pt-3 text-end">Credit</th>
+                    <th class="px-2 pt-3">Cost centre</th><th class="px-2 pt-3">Party</th><th class="px-2 pt-3">Note</th><th></th>
+                </tr>
+            </thead>
+            <tbody class="lines">
+                @for (int i = 0; i < Model.Lines.Count; i++)
+                {
+                    <partial name="_VoucherLine" model="new VoucherLineRowVm { Line = Model.Lines[i], Index = i.ToString() }" />
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center px-3 py-2 no-print">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="add-line"><i class="bi bi-plus"></i> Add line</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="balance-line" title="Put the difference on an empty line"><i class="bi bi-distribute-vertical"></i> Balance the difference</button>
+        <div class="d-flex gap-2 align-items-center ms-md-4">
+            <select id="tax-rate" class="form-select form-select-sm" style="width:auto" aria-label="VAT rate">
+                <option value="">VAT rate…</option>
+                @foreach (var t in taxes) { <option value="@t.Id" data-rate="@t.RatePercent.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-account="@t.AccountId" data-kind="@t.Kind">@t.Name</option> }
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-tax" title="Adds VAT on the line you last edited"><i class="bi bi-percent"></i> Add VAT line</button>
+        </div>
+    </div>
+    <div class="balance-bar">
+        <div><div class="k">Total debit</div><div class="v dr" id="total-dr">0.00</div></div>
+        <div><div class="k">Total credit</div><div class="v cr" id="total-cr">0.00</div></div>
+        <div><div class="k">Difference</div><div class="v" id="diff">0.00</div></div>
+        <div class="balance-state off" id="balance-state">Enter amounts</div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2">
+    <button type="submit" name="submitAction" value="submit" class="btn btn-primary">
+        @(requireApproval ? "Submit for approval" : "Post to ledger")
+    </button>
+    <button type="submit" name="submitAction" value="draft" class="btn btn-outline-primary">Save as draft</button>
+    <a class="btn btn-link" asp-action="Index">Cancel</a>
+    <span class="small-print ms-auto align-self-center">@(requireApproval ? "A second user must approve before it reaches the ledger." : "Approval is switched off: vouchers post immediately.")</span>
+</div>
+
+<template id="line-template">
+    <partial name="_VoucherLine" model="templateRow" />
+</template>

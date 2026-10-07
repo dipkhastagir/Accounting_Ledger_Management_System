@@ -1,0 +1,5 @@
+@model UserFormVm
+@{ ViewData["Title"] = "New user"; }
+<div class="page-head"><div><h1>New user</h1></div></div>
+<div class="sheet" style="max-width:820px"><form asp-action="Create" method="post"><partial name="_Form" model="Model" />
+    <div class="mt-4"><button class="btn btn-primary" type="submit">Create user</button> <a class="btn btn-link" asp-action="Index">Cancel</a></div></form></div>

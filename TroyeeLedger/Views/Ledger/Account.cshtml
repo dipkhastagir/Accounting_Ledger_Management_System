@@ -1,0 +1,36 @@
+@model AccountStatementVm?
+@{
+    ViewData["Title"] = Model == null ? "Account ledger" : Model.Title;
+    var accounts = (List<ChartOfAccount>)ViewBag.Accounts;
+}
+<div class="page-head">
+    <div>
+        <h1>@(Model == null ? "Account ledger" : Model.Title)</h1>
+        @if (Model != null) { <p class="sub">@Model.Account!.AccountType account · @Fmt.Date(Model.From) to @Fmt.Date(Model.To) · @Model.Lines.Count postings</p> }
+    </div>
+    @if (Model != null) { <div class="actions"><partial name="_ExportLink" /></div> }
+</div>
+<form method="get" class="sheet filters">
+    <div style="min-width:280px;flex:1"><label class="form-label small">Account</label>
+        <select name="id" class="form-select">
+            <option value="">Choose an account…</option>
+            @foreach (var a in accounts) { <option value="@a.Id" selected="@(Model?.Account?.Id == a.Id)">@a.Code — @a.Name</option> }
+        </select></div>
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@(Model != null ? Fmt.Iso(Model.From) : "")" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@(Model != null ? Fmt.Iso(Model.To) : "")" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Show ledger</button></div>
+</form>
+@if (Model != null)
+{
+    <div class="figures">
+        <div class="figure"><div class="label">Opening balance</div><div class="value">@Fmt.DrCr(Model.Opening)</div></div>
+        <div class="figure"><div class="label">Debits in period</div><div class="value dr">@Fmt.Money(Model.TotalDebit)</div></div>
+        <div class="figure"><div class="label">Credits in period</div><div class="value cr">@Fmt.Money(Model.TotalCredit)</div></div>
+        <div class="figure"><div class="label">Closing balance</div><div class="value">@Fmt.DrCr(Model.Closing)</div></div>
+    </div>
+    <div class="sheet flush"><partial name="_StatementTable" model="Model" /></div>
+}
+else
+{
+    <div class="sheet empty"><i class="bi bi-journal-text"></i>Choose an account above to see every posting with its running balance.</div>
+}

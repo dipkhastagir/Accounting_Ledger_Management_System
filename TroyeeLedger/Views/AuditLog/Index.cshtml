@@ -1,0 +1,37 @@
+@model PagedResult<AuditLog>
+@{
+    ViewData["Title"] = "Audit trail";
+    var actions = (List<string>)ViewBag.Actions;
+    var users = (List<string>)ViewBag.Users;
+    DateTime? from = ViewBag.From, to = ViewBag.To;
+    string? selAction = ViewBag.Action, selUser = ViewBag.User;
+}
+<div class="page-head">
+    <div><h1>Audit trail</h1><p class="sub">Append-only record of every sign-in, change and approval. Each record is hash-linked to the one before it, so edits and deletions are detectable.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">Search</label><input name="search" value="@ViewBag.Search" class="form-control" placeholder="Record or details" /></div>
+    <div><label class="form-label small">Action</label><select name="action" class="form-select"><option value="">All</option>@foreach (var a in actions) { <option value="@a" selected="@(a == selAction)">@a</option> }</select></div>
+    <div><label class="form-label small">User</label><select name="user" class="form-select"><option value="">All</option>@foreach (var u in users) { <option value="@u" selected="@(u == selUser)">@u</option> }</select></div>
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@(from?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@(to?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Filter</button> <a class="btn btn-link" asp-action="Index">Clear</a></div>
+</form>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>#</th><th>When</th><th>User</th><th>Action</th><th>Record</th><th>Details</th><th>Hash</th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.Items)
+        {
+            <tr><td class="muted"><a asp-action="Details" asp-route-id="@a.Id">@a.Id</a></td><td class="text-nowrap">@Fmt.DateTime(a.Timestamp)</td><td>@a.UserName</td>
+                <td><span class="chip @(a.Action.Contains("Tamper") || a.Action == "LoginFailed" ? "st-rejected" : "st-draft")">@a.Action</span></td>
+                <td class="small">@a.EntityName @a.EntityId</td><td class="small-print">@a.Details</td><td class="hash">@Fmt.ShortHash(a.Hash)</td></tr>
+        }
+        @if (!Model.Items.Any()) { <tr><td colspan="7" class="empty">No records match.</td></tr> }
+        </tbody>
+    </table>
+    </div>
+</div>
+<partial name="_Pager" model="PagerVm.From(Model)" />

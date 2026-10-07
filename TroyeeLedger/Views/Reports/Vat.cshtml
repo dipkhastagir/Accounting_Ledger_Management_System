@@ -1,0 +1,31 @@
+@model VatReportVm
+@{ ViewData["Title"] = "VAT summary"; }
+<div class="page-head">
+    <div><h1>VAT summary</h1><p class="sub">Supports the monthly Mushak 9.1 return. @Fmt.Date(Model.From) to @Fmt.Date(Model.To).</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="figures">
+    <div class="figure"><div class="label">Output VAT (sales)</div><div class="value">@Fmt.Money(Model.TotalOutput)</div></div>
+    <div class="figure"><div class="label">Input VAT (purchases)</div><div class="value">@Fmt.Money(Model.TotalInput)</div></div>
+    <div class="figure"><div class="label">@(Model.NetPayable >= 0 ? "Net VAT payable" : "Net VAT refundable")</div><div class="value">@Fmt.Money(Math.Abs(Model.NetPayable))</div></div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Tax</th><th>Ledger account</th><th class="num">Debits</th><th class="num">Credits</th><th class="num">Net VAT</th><th class="num">Implied taxable value</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr><td>@r.TaxName<div class="small-print">@r.Kind.Display()</div></td><td class="small-print">@r.AccountName</td><td class="num dr">@Fmt.MoneyOrBlank(r.Debit)</td><td class="num cr">@Fmt.MoneyOrBlank(r.Credit)</td><td class="num">@Fmt.Signed(r.Net)</td><td class="num muted">@Fmt.Money(r.ImpliedTaxableValue)</td></tr>
+        }
+        </tbody>
+        <tfoot><tr><td colspan="4">Net payable (output − input)</td><td class="num">@Fmt.Signed(Model.NetPayable)</td><td></td></tr></tfoot>
+    </table>
+    </div>
+</div>
+<p class="small-print">Rates sharing one ledger account show the same movements; the implied taxable value assumes the whole balance came from that rate. VAT settlement payments in the period reduce the net figures.</p>

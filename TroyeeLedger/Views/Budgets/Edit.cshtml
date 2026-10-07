@@ -1,0 +1,7 @@
+@model BudgetFormVm
+@{ ViewData["Title"] = "Edit " + Model.Name; }
+<div class="page-head"><div><h1>Edit @Model.Name</h1></div></div>
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post"><partial name="_Form" model="Model" />
+    <button class="btn btn-primary" type="submit">Save changes</button> <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a></form>
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-3" data-confirm="Delete this budget? Posted vouchers are not affected.">
+    <button class="btn btn-outline-danger btn-sm" type="submit">Delete budget</button></form>

@@ -1,0 +1,33 @@
+@model PartyBalancesVm
+@{
+    ViewData["Title"] = "Party balances";
+    var type = ViewBag.Type as PartyType?;
+}
+<div class="page-head">
+    <div><h1>Party balances</h1><p class="sub">Outstanding with each customer and supplier as of @Fmt.Date(Model.AsOf). Debit balances are owed to us; credit balances are owed by us.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">As of</label><input type="date" name="asOf" value="@Fmt.Iso(Model.AsOf)" class="form-control" /></div>
+    <div><label class="form-label small">Type</label><select name="type" class="form-select"><option value="">All</option>@foreach (PartyType t in Enum.GetValues(typeof(PartyType))) { <option value="@t" selected="@(type == t)">@t</option> }</select></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="figures">
+    <div class="figure"><div class="label">Total receivable</div><div class="value dr">@Fmt.Money(Model.TotalReceivable)</div></div>
+    <div class="figure"><div class="label">Total payable</div><div class="value cr">@Fmt.Money(Model.TotalPayable)</div></div>
+    <div class="figure"><div class="label">Over credit limit</div><div class="value">@Model.Rows.Count(r => r.OverLimit)</div></div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Code</th><th>Party</th><th>Type</th><th class="num">Debits</th><th class="num">Credits</th><th class="num">Balance</th><th class="num">Credit limit</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr><td>@r.Code</td><td><a asp-controller="Parties" asp-action="Details" asp-route-id="@r.PartyId">@r.Name</a>@if (r.OverLimit) { <span class="chip st-rejected ms-1">Over limit</span> }</td><td class="small-print">@r.Type</td>
+                <td class="num dr">@Fmt.MoneyOrBlank(r.Debit)</td><td class="num cr">@Fmt.MoneyOrBlank(r.Credit)</td><td class="num">@Fmt.DrCr(r.Balance)</td><td class="num muted">@Fmt.MoneyOrBlank(r.CreditLimit)</td></tr>
+        }
+        </tbody>
+    </table>
+    </div>
+</div>

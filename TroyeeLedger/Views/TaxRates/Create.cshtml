@@ -1,0 +1,5 @@
+@model TaxRate
+@{ ViewData["Title"] = "New VAT rate"; }
+<div class="page-head"><div><h1>New VAT rate</h1></div></div>
+<div class="sheet" style="max-width:820px"><form asp-action="Create" method="post"><partial name="_Form" model="Model" />
+    <div class="mt-4"><button class="btn btn-primary" type="submit">Create</button> <a class="btn btn-link" asp-action="Index">Cancel</a></div></form></div>

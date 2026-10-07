@@ -1,0 +1,6 @@
+@{
+    var qs = Context.Request.QueryString;
+    var href = Context.Request.Path + qs.ToString() + (qs.HasValue ? "&" : "?") + "export=csv";
+}
+<a class="btn btn-outline-primary" href="@href"><i class="bi bi-download"></i> CSV</a>
+<button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>

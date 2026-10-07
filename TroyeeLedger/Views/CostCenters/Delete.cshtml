@@ -1,0 +1,7 @@
+@model CostCenter
+@{ ViewData["Title"] = "Delete " + Model.Code; var inUse = (int)ViewBag.InUse; }
+<div class="page-head"><div><h1>Delete @Model.Code · @Model.Name?</h1></div></div>
+<div class="sheet" style="max-width:640px">
+    <p>@(inUse > 0 ? $"It is used on {inUse} voucher line(s), so it will be deactivated instead of deleted." : "It has never been used and will be removed permanently.")</p>
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post"><button class="btn btn-danger" type="submit">@(inUse > 0 ? "Deactivate" : "Delete")</button> <a class="btn btn-link" asp-action="Index">Cancel</a></form>
+</div>

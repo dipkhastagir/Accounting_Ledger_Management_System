@@ -1,0 +1,13 @@
+@model ChartOfAccount
+@{ ViewData["Title"] = "Edit " + Model.Code; }
+<div class="page-head"><div><h1>Edit @Model.Code · @Model.Name</h1><p class="sub">Changes apply to all reports immediately. Sealed vouchers are not affected.</p></div></div>
+<div class="sheet" style="max-width:900px">
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        <partial name="_AccountForm" model="Model" />
+        <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Save changes</button>
+            <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+            <a class="btn btn-outline-danger ms-auto" asp-action="Delete" asp-route-id="@Model.Id">Delete account</a>
+        </div>
+    </form>
+</div>

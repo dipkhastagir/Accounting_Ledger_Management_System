@@ -1,0 +1,5 @@
+@model UserFormVm
+@{ ViewData["Title"] = "Edit " + Model.Username; }
+<div class="page-head"><div><h1>Edit @Model.Username</h1></div></div>
+<div class="sheet" style="max-width:820px"><form asp-action="Edit" asp-route-id="@Model.Id" method="post"><partial name="_Form" model="Model" />
+    <div class="mt-4"><button class="btn btn-primary" type="submit">Save changes</button> <a class="btn btn-link" asp-action="Index">Cancel</a></div></form></div>

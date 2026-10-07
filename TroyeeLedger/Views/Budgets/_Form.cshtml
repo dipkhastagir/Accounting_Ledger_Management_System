@@ -1,0 +1,29 @@
+@model BudgetFormVm
+@{ var years = (List<SelectListItem>)ViewBag.Years; var inv = System.Globalization.CultureInfo.InvariantCulture; }
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+<div class="sheet">
+    <div class="row g-3">
+        <div class="col-md-5"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+        <div class="col-md-3"><label asp-for="FiscalYearId" class="form-label"></label><select asp-for="FiscalYearId" asp-items="years" class="form-select"></select><span asp-validation-for="FiscalYearId" class="text-danger small"></span></div>
+        <div class="col-md-4"><label asp-for="Notes" class="form-label"></label><input asp-for="Notes" class="form-control" /></div>
+    </div>
+</div>
+<div class="sheet flush">
+    <h2>Annual amounts</h2>
+    <p class="small-print px-4">Leave an account empty to keep it out of the budget. Income lines are targets; expense lines are limits.</p>
+    <table class="ledger">
+        <thead><tr><th>Code</th><th>Account</th><th>Type</th><th class="num" style="width:220px">Annual amount</th></tr></thead>
+        <tbody>
+        @for (int i = 0; i < Model.Lines.Count; i++)
+        {
+            var l = Model.Lines[i];
+            <tr>
+                <td>@l.Code<input type="hidden" name="Lines[@i].AccountId" value="@l.AccountId" /><input type="hidden" name="Lines[@i].Code" value="@l.Code" /><input type="hidden" name="Lines[@i].Name" value="@l.Name" /><input type="hidden" name="Lines[@i].Type" value="@l.Type" /></td>
+                <td>@l.Name</td>
+                <td class="small-print">@l.Type</td>
+                <td><input type="number" step="0.01" min="0" name="Lines[@i].Amount" value="@(l.Amount == 0 ? "" : l.Amount.ToString("0.00", inv))" class="form-control form-control-sm text-end" /></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

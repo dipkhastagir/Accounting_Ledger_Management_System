@@ -1,0 +1,5 @@
+@model CostCenter
+@{ ViewData["Title"] = "Edit " + Model.Code; }
+<div class="page-head"><div><h1>Edit @Model.Code</h1></div></div>
+<div class="sheet" style="max-width:720px"><form asp-action="Edit" asp-route-id="@Model.Id" method="post"><partial name="_Form" model="Model" />
+    <div class="mt-4"><button class="btn btn-primary" type="submit">Save changes</button> <a class="btn btn-link" asp-action="Index">Cancel</a></div></form></div>

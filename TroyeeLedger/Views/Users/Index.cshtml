@@ -1,0 +1,21 @@
+@model List<AppUser>
+@{ ViewData["Title"] = "Users"; }
+<div class="page-head">
+    <div><h1>Users</h1><p class="sub">Who can sign in and what they can do.</p></div>
+    <div class="actions"><a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New user</a></div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var u in Model)
+        {
+            <tr><td>@u.FullName<div class="small-print">@u.Email</div></td><td>@u.Username</td><td>@u.Role</td><td class="small-print">@Fmt.DateTime(u.LastLoginAt)</td>
+                <td>@if (u.IsActive) { <span class="chip st-posted">Active</span> } else { <span class="chip st-draft">Disabled</span> }</td>
+                <td class="text-end text-nowrap"><a class="btn btn-sm btn-link" asp-action="Edit" asp-route-id="@u.Id">Edit</a><a class="btn btn-sm btn-link" asp-action="ResetPassword" asp-route-id="@u.Id">Reset password</a></td></tr>
+        }
+        </tbody>
+    </table>
+    </div>
+</div>

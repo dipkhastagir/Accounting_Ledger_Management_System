@@ -1,0 +1,25 @@
+@model AuditLog
+@{
+    ViewData["Title"] = "Audit record " + Model.Id;
+    string recomputed = ViewBag.Recomputed;
+    long? prevId = ViewBag.PrevId;
+    string? prevHash = ViewBag.PrevHash;
+    bool ok = recomputed == Model.Hash;
+}
+<div class="page-head"><div><h1>Audit record #@Model.Id</h1><p class="sub">@Model.Action · @Model.EntityName @Model.EntityId</p></div>
+    <div class="actions"><a class="btn btn-outline-primary" asp-action="Index">Back to trail</a></div></div>
+<div class="sheet" style="max-width:900px">
+    <dl class="kv">
+        <dt>When</dt><dd>@Model.Timestamp.ToString("dd MMM yyyy, HH:mm:ss.fff")</dd>
+        <dt>User</dt><dd>@Model.UserName</dd>
+        <dt>IP address</dt><dd>@(Model.IpAddress ?? "—")</dd>
+        <dt>Action</dt><dd>@Model.Action</dd>
+        <dt>Record</dt><dd>@Model.EntityName @Model.EntityId</dd>
+        <dt>Details</dt><dd>@(Model.Details ?? "—")</dd>
+        <dt>Previous hash</dt><dd class="hash">@Model.PreviousHash</dd>
+        <dt>Stored hash</dt><dd class="hash">@Model.Hash</dd>
+        <dt>Recomputed</dt><dd class="hash">@recomputed</dd>
+        <dt>Verification</dt><dd>@if (ok) { <span class="st-good"><i class="bi bi-check-circle"></i> This record is unaltered</span> } else { <span class="st-bad"><i class="bi bi-x-circle"></i> This record was changed after it was written</span> }</dd>
+        <dt>Link to previous</dt><dd>@if (prevId == null) { <span>First record (genesis)</span> } else if (prevHash == Model.PreviousHash) { <span class="st-good">Matches record #@prevId</span> } else { <span class="st-bad">Does not match record #@prevId — a record may have been removed</span> }</dd>
+    </dl>
+</div>

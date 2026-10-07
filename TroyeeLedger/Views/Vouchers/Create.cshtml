@@ -1,0 +1,8 @@
+@model VoucherFormVm
+@{ ViewData["Title"] = "New voucher"; }
+<div class="page-head">
+    <div><h1>New voucher</h1><p class="sub">Record a transaction in double entry. Debits must equal credits before it can be saved.</p></div>
+</div>
+<form asp-action="Create" method="post" id="voucher-form">
+    <partial name="_VoucherForm" model="Model" />
+</form>

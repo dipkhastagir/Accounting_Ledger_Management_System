@@ -1,0 +1,147 @@
+@model Voucher
+@{
+    ViewData["Title"] = Model.VoucherNo;
+    var risk = ViewBag.Risk as AnomalyItem;
+    bool chainOk = (bool)ViewBag.ChainOk;
+    bool canApprove = (bool)ViewBag.CanApprove;
+    var history = (List<AuditLog>)ViewBag.History;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+    bool editable = Model.Status is VoucherStatus.Draft or VoucherStatus.Rejected;
+    var lines = Model.Details.OrderBy(d => d.LineNo).ToList();
+}
+<div class="page-head">
+    <div>
+        <h1>@Model.VoucherNo <span class="chip @Fmt.StatusCss(Model.Status) align-middle" style="font-size:.8rem">@Model.Status.Display()</span></h1>
+        <p class="sub">@Model.VoucherType voucher dated @Fmt.Date(Model.VoucherDate)@(Model.Reference != null ? " · ref " + Model.Reference : "")</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-primary" asp-action="Print" asp-route-id="@Model.Id" target="_blank"><i class="bi bi-printer"></i> Print</a>
+        @if (canEdit)
+        {
+            <a class="btn btn-outline-primary" asp-action="Copy" asp-route-id="@Model.Id"><i class="bi bi-copy"></i> Copy as new</a>
+            @if (editable)
+            {
+                <a class="btn btn-outline-primary" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil"></i> Edit</a>
+                <form asp-action="Submit" asp-route-id="@Model.Id" method="post" class="d-inline"><button class="btn btn-primary" type="submit">Submit</button></form>
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline" data-confirm="Delete this draft permanently?"><button class="btn btn-outline-danger" type="submit">Delete</button></form>
+            }
+            @if (Model.Status == VoucherStatus.Posted)
+            {
+                <a class="btn btn-outline-danger" asp-action="Reverse" asp-route-id="@Model.Id"><i class="bi bi-arrow-counterclockwise"></i> Reverse</a>
+            }
+        }
+        @if (canApprove)
+        {
+            <form asp-action="Reject" asp-route-id="@Model.Id" method="post" class="d-inline" data-reject><input type="hidden" name="reason" /><button class="btn btn-outline-danger" type="submit">Return to author</button></form>
+            <form asp-action="Approve" asp-route-id="@Model.Id" method="post" class="d-inline" data-confirm="Approve and seal this voucher into the ledger? It cannot be edited afterwards."><button class="btn btn-primary" type="submit"><i class="bi bi-check2"></i> Approve &amp; post</button></form>
+        }
+    </div>
+</div>
+
+@if (Model.Status == VoucherStatus.Rejected)
+{
+    <div class="alert alert-warning">Returned by the approver: <strong>@Model.RejectionReason</strong></div>
+}
+@if (Model.ReversalOf != null)
+{
+    <div class="alert alert-secondary">This voucher reverses <a asp-action="Details" asp-route-id="@Model.ReversalOfId">@Model.ReversalOf.VoucherNo</a>.</div>
+}
+@if (ViewBag.ReversedBy is string rb)
+{
+    <div class="alert alert-secondary">This voucher was cancelled by reversal <a asp-action="Details" asp-route-id="@Model.ReversedByVoucherId">@rb</a>. Its original postings remain in the ledger, offset by the reversal.</div>
+}
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="sheet">
+            <div class="d-flex gap-4 align-items-start">
+                <div class="flex-grow-1">
+                    <div class="small-print mb-1">Narration</div>
+                    <p class="mb-3" style="font-size:1.05rem">@(Model.Narration ?? "No narration given.")</p>
+                    <dl class="kv">
+                        <dt>Entered by</dt><dd>@Model.CreatedBy?.FullName on @Fmt.DateTime(Model.CreatedAt)</dd>
+                        <dt>Submitted</dt><dd>@Fmt.DateTime(Model.SubmittedAt)</dd>
+                        <dt>Approved by</dt><dd>@(Model.ApprovedBy?.FullName ?? "—") @(Model.ApprovedAt.HasValue ? "on " + Fmt.DateTime(Model.ApprovedAt) : "")</dd>
+                        <dt>Ledger rows</dt><dd>@ViewBag.LedgerRows</dd>
+                    </dl>
+                </div>
+                @if (Model.ChainIndex.HasValue)
+                {
+                    <div class="seal @(chainOk ? "" : "broken")" title="SHA-256: @Model.Hash">
+                        <div class="t1">@(chainOk ? "SEALED" : "ALTERED")</div>
+                        <div class="t2">#@Model.ChainIndex</div>
+                        <div class="t3">@Fmt.ShortHash(Model.Hash)</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="sheet flush">
+            <div class="table-wrap">
+            <table class="ledger">
+                <thead><tr><th>#</th><th>Account</th><th>Cost centre</th><th>Party</th><th>Note</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+                <tbody>
+                @foreach (var d in lines)
+                {
+                    <tr>
+                        <td class="muted">@d.LineNo</td>
+                        <td><a asp-controller="Ledger" asp-action="Account" asp-route-id="@d.AccountId">@d.Account?.Code — @d.Account?.Name</a></td>
+                        <td class="small-print">@d.CostCenter?.Name</td>
+                        <td class="small-print">@if (d.Party != null) { <a asp-controller="Parties" asp-action="Details" asp-route-id="@d.PartyId">@d.Party.Name</a> }</td>
+                        <td class="small-print">@d.LineNarration</td>
+                        <td class="num dr">@Fmt.MoneyOrBlank(d.Debit)</td>
+                        <td class="num cr">@Fmt.MoneyOrBlank(d.Credit)</td>
+                    </tr>
+                }
+                </tbody>
+                <tfoot><tr><td colspan="5">Total</td><td class="num dr">@Fmt.Money(lines.Sum(d => d.Debit))</td><td class="num cr">@Fmt.Money(lines.Sum(d => d.Credit))</td></tr></tfoot>
+            </table>
+            </div>
+        </div>
+
+        @if (Model.ChainIndex.HasValue)
+        {
+            <div class="sheet">
+                <h2>Cryptographic seal</h2>
+                <p class="small-print">On approval the voucher's date, type, amounts, accounts, parties and cost centres were fingerprinted together with the previous voucher's fingerprint. Changing any of them later — even directly in the database — breaks this link.</p>
+                <dl class="kv">
+                    <dt>Chain position</dt><dd>#@Model.ChainIndex</dd>
+                    <dt>Previous hash</dt><dd class="hash">@Model.PreviousHash</dd>
+                    <dt>This hash</dt><dd class="hash">@Model.Hash</dd>
+                    <dt>Verification</dt><dd>@if (chainOk) { <span class="st-good"><i class="bi bi-check-circle"></i> Recomputed fingerprint matches</span> } else { <span class="st-bad"><i class="bi bi-x-circle"></i> Content no longer matches its seal</span> }</dd>
+                </dl>
+            </div>
+        }
+    </div>
+
+    <div class="col-xl-4">
+        <div class="sheet">
+            <h2>Risk assessment</h2>
+            @if (risk == null)
+            {
+                <p class="small-print mb-0">System-generated entries are not scored.</p>
+            }
+            else
+            {
+                <div class="d-flex align-items-baseline gap-2 mb-2">
+                    <span style="font-family:var(--font-title);font-size:2rem">@risk.Score</span><span class="muted">/ 100</span>
+                    <span class="chip risk-@risk.Level ms-auto">@(risk.Level == "None" ? "No flags" : risk.Level + " risk")</span>
+                </div>
+                @foreach (var r in risk.Reasons)
+                {
+                    <div class="reason"><b>@r.Rule</b> <span class="pts">+@r.Points</span><br />@r.Detail</div>
+                }
+                @if (!risk.Reasons.Any()) { <p class="small-print mb-0">None of the ten forensic rules found anything unusual.</p> }
+                <a class="small d-inline-block mt-2" asp-controller="Forensics" asp-action="Anomalies">How scoring works</a>
+            }
+        </div>
+        <div class="sheet">
+            <h2>History</h2>
+            @foreach (var h in history)
+            {
+                <div class="small mb-2"><span class="fw-semibold">@h.Action</span> by @h.UserName<br /><span class="muted">@Fmt.DateTime(h.Timestamp)</span>@if (!string.IsNullOrEmpty(h.Details)) { <br /><span class="small-print">@h.Details</span> }</div>
+            }
+            @if (!history.Any()) { <p class="small-print mb-0">Created during initial data setup.</p> }
+        </div>
+    </div>
+</div>

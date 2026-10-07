@@ -1,0 +1,5 @@
+@model RecurringFormVm
+@{ ViewData["Title"] = "Edit " + Model.Name; }
+<div class="page-head"><div><h1>Edit @Model.Name</h1><p class="sub">Changes apply to future runs only.</p></div></div>
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post"><partial name="_Form" model="Model" />
+    <button class="btn btn-primary" type="submit">Save changes</button> <a class="btn btn-link" asp-action="Index">Cancel</a></form>

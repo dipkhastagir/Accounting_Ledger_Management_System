@@ -1,0 +1,38 @@
+@model CostCenterReportVm
+@{ ViewData["Title"] = "Cost centre report"; string J(object o) => System.Text.Json.JsonSerializer.Serialize(o); }
+<div class="page-head">
+    <div><h1>Cost centres</h1><p class="sub">Income and expenses tagged to each department, @Fmt.Date(Model.From) to @Fmt.Date(Model.To). Untagged lines are not included.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="sheet"><div class="chart-box"><canvas id="cc"></canvas></div></div>
+<div class="row g-3">
+@foreach (var r in Model.Rows)
+{
+    <div class="col-lg-6">
+        <div class="sheet flush">
+            <h2>@r.Code · @r.Name</h2>
+            <table class="ledger mt-2">
+                <tbody>
+                @foreach (var l in r.Lines) { <tr><td>@l.AccountName <span class="muted small">@l.Type</span></td><td class="num @(l.Type == AccountType.Income ? "dr" : "cr")">@Fmt.Signed(l.Amount)</td></tr> }
+                @if (!r.Lines.Any()) { <tr><td colspan="2" class="empty">No tagged activity.</td></tr> }
+                </tbody>
+                <tfoot><tr><td>Contribution (income − expense)</td><td class="num">@Fmt.Signed(r.Net)</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+}
+</div>
+@section Scripts {
+<script>
+new Chart(document.getElementById("cc"), { type: "bar",
+  data: { labels: @Html.Raw(J(Model.Rows.Select(r => r.Name))),
+    datasets: [ { label: "Income", data: @Html.Raw(J(Model.Rows.Select(r => r.Income))), backgroundColor: "#1E4636" },
+                { label: "Expense", data: @Html.Raw(J(Model.Rows.Select(r => r.Expense))), backgroundColor: "#C9A86A" } ] },
+  options: { plugins: { tooltip: { callbacks: { label: c => c.dataset.label + ": " + TL.fmt(c.raw) } } } } });
+</script>
+}

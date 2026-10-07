@@ -1,0 +1,36 @@
+@model List<AccountBalanceRow>
+@{
+    ViewData["Title"] = "Account ledgers";
+    var asOf = (DateTime)ViewBag.AsOf;
+}
+<div class="page-head">
+    <div><h1>Account ledgers</h1><p class="sub">Pick an account to open its full ledger with running balance. Balances as of @Fmt.Date(asOf).</p></div>
+    <form method="get" class="actions filters">
+        <input type="date" name="asOf" value="@Fmt.Iso(asOf)" class="form-control" />
+        <button class="btn btn-primary" type="submit">Update</button>
+    </form>
+</div>
+<div class="row g-3">
+@foreach (var root in Model.Where(r => r.Level == 0))
+{
+    var start = Model.IndexOf(root);
+    var rows = Model.Skip(start + 1).TakeWhile(r => r.Level > 0).Where(r => !r.IsGroup).ToList();
+    <div class="col-lg-6">
+        <div class="sheet flush">
+            <h2>@root.Name <span class="small-print">@Fmt.Signed(root.Natural)</span></h2>
+            <table class="ledger mt-2">
+                <tbody>
+                @foreach (var r in rows)
+                {
+                    <tr>
+                        <td style="width:70px" class="muted">@r.Code</td>
+                        <td><a asp-action="Account" asp-route-id="@r.AccountId">@r.Name</a></td>
+                        <td class="num">@Fmt.Signed(r.Natural)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+</div>

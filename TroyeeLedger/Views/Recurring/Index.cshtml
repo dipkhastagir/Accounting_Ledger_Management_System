@@ -1,0 +1,47 @@
+@model List<RecurringTemplate>
+@{
+    ViewData["Title"] = "Recurring vouchers";
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+    var today = DateTime.Today;
+    bool IsDue(RecurringTemplate t) => t.IsActive && t.NextRunDate <= today && (t.EndDate == null || t.NextRunDate <= t.EndDate);
+}
+<div class="page-head">
+    <div><h1>Recurring vouchers</h1><p class="sub">Standing entries such as rent, subscriptions and depreciation. Running them creates ordinary vouchers that still go through approval.</p></div>
+    <div class="actions">
+        @if (canEdit)
+        {
+            <form asp-action="Run" method="post" class="d-inline"><button class="btn btn-brass" type="submit" disabled="@(!Model.Any(IsDue))"><i class="bi bi-play"></i> Run all due (@Model.Count(IsDue))</button></form>
+            <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New template</a>
+        }
+    </div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Template</th><th>Type</th><th>Frequency</th><th>Next run</th><th>Entries</th><th class="num">Amount</th><th class="num">Created</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td class="fw-semibold">@t.Name @if (!t.IsActive) { <span class="chip st-draft">Paused</span> } @if (IsDue(t)) { <span class="chip st-pending">Due</span> }<div class="small-print fw-normal">@t.Narration</div></td>
+                <td class="small-print">@t.VoucherType</td>
+                <td class="small-print">@t.Frequency</td>
+                <td>@Fmt.Date(t.NextRunDate)@if (t.EndDate.HasValue) { <div class="small-print">until @Fmt.Date(t.EndDate)</div> }</td>
+                <td class="small-print">@foreach (var l in t.Lines) { <div>@(l.Debit > 0 ? "Dr" : "Cr") @l.Account?.Name</div> }</td>
+                <td class="num">@Fmt.Money(t.Lines.Sum(l => l.Debit))</td>
+                <td class="num">@t.GeneratedCount</td>
+                <td class="text-end text-nowrap">
+                    @if (canEdit)
+                    {
+                        @if (IsDue(t)) { <form asp-action="Run" asp-route-id="@t.Id" method="post" class="d-inline"><button class="btn btn-sm btn-outline-primary" type="submit">Run</button></form> }
+                        <a class="btn btn-sm btn-link" asp-action="Edit" asp-route-id="@t.Id" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline" data-confirm="Delete this template?"><button class="btn btn-sm btn-link text-danger" type="submit" title="Delete"><i class="bi bi-trash"></i></button></form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!Model.Any()) { <tr><td colspan="8" class="empty"><i class="bi bi-arrow-repeat"></i>No recurring templates yet.</td></tr> }
+        </tbody>
+    </table>
+    </div>
+</div>

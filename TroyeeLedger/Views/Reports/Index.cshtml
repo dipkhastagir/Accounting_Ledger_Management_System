@@ -1,0 +1,23 @@
+@{ ViewData["Title"] = "Reports"; }
+<div class="page-head"><div><h1>Reports</h1><p class="sub">Every statement is computed live from posted ledger rows. Nothing is stored or maintained by hand.</p></div></div>
+<h2 class="sheet-title">Financial statements</h2>
+<div class="row g-3 hub mb-4">
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="TrialBalance"><h3>Trial balance</h3><p>Every account's debit or credit balance. Proves the books balance.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="ProfitLoss"><h3>Profit &amp; loss</h3><p>Income less expenses for a period, compared with the period before.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="BalanceSheet"><h3>Balance sheet</h3><p>Assets, liabilities and equity on a date, with the accounting equation checked.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="CashFlow"><h3>Cash flow</h3><p>Where cash came from and went, split into operating, investing and financing.</p></a></div>
+</div>
+<h2 class="sheet-title">Books and registers</h2>
+<div class="row g-3 hub mb-4">
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-controller="Ledger" asp-action="Account"><h3>Account ledger</h3><p>All postings to one account with running balance.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-controller="Ledger" asp-action="DayBook"><h3>Day book</h3><p>The chronological journal of posted vouchers.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-controller="Ledger" asp-action="CashBook"><h3>Cash book</h3><p>Receipts and payments across cash and bank.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="PartyBalances"><h3>Party balances</h3><p>What each customer owes and each supplier is owed.</p></a></div>
+</div>
+<h2 class="sheet-title">Management and tax</h2>
+<div class="row g-3 hub">
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="Vat"><h3>VAT summary</h3><p>Output VAT, input VAT and the net amount payable.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-action="CostCenters"><h3>Cost centres</h3><p>Income, expense and contribution by department.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-controller="Budgets" asp-action="Index"><h3>Budget vs actual</h3><p>Spending and income against the approved plan.</p></a></div>
+    <div class="col-md-6 col-xl-3"><a class="hub-item" asp-controller="Analytics" asp-action="Ratios"><h3>Financial ratios</h3><p>Liquidity, solvency, profitability and cash runway.</p></a></div>
+</div>

@@ -1,0 +1,41 @@
+@model ProfitLossVm
+@{
+    ViewData["Title"] = "Profit and loss";
+    string Change(PlRow r) => r.ChangePct.HasValue ? (r.ChangePct.Value >= 0 ? "+" : "") + Fmt.Pct(r.ChangePct.Value) : "—";
+}
+<div class="page-head">
+    <div><h1>Profit and loss</h1><p class="sub">@Fmt.Date(Model.From) to @Fmt.Date(Model.To), compared with @Fmt.Date(Model.PrevFrom) to @Fmt.Date(Model.PrevTo). Year-end closing entries are excluded.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="figures">
+    <div class="figure"><div class="label">Income</div><div class="value">@Fmt.Money(Model.TotalIncome)</div><div class="note">Previous: @Fmt.Money(Model.PrevTotalIncome)</div></div>
+    <div class="figure"><div class="label">Expenses</div><div class="value">@Fmt.Money(Model.TotalExpense)</div><div class="note">Previous: @Fmt.Money(Model.PrevTotalExpense)</div></div>
+    <div class="figure"><div class="label">@(Model.NetProfit >= 0 ? "Net profit" : "Net loss")</div><div class="value @(Model.NetProfit < 0 ? "cr" : "")">@Fmt.Signed(Model.NetProfit)</div><div class="note">Margin @(Model.TotalIncome == 0 ? "—" : Fmt.Pct(Model.NetProfit / Model.TotalIncome))</div></div>
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th>Account</th><th class="num">This period</th><th class="num">Previous period</th><th class="num">Change</th></tr></thead>
+        <tbody>
+        @foreach (var grp in new[] { ("Income", Model.Income), ("Expenses", Model.Expense) })
+        {
+            foreach (var r in grp.Item2)
+            {
+                <tr class="@(r.IsGroup ? "group" : "") lvl-@r.Level">
+                    <td class="indent-@Math.Min(r.Level, 4)">@if (r.IsGroup) { @r.Name } else { <a asp-controller="Ledger" asp-action="Account" asp-route-id="@r.AccountId">@r.Code · @r.Name</a> }</td>
+                    <td class="num">@Fmt.Signed(r.Current)</td>
+                    <td class="num muted">@Fmt.Signed(r.Previous)</td>
+                    <td class="num small-print">@Change(r)</td>
+                </tr>
+            }
+        }
+        </tbody>
+        <tfoot><tr><td>@(Model.NetProfit >= 0 ? "Net profit" : "Net loss")</td><td class="num">@Fmt.Signed(Model.NetProfit)</td><td class="num">@Fmt.Signed(Model.PrevNetProfit)</td><td></td></tr></tfoot>
+    </table>
+    </div>
+</div>

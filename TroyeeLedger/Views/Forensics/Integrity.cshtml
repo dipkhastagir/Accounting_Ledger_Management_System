@@ -1,0 +1,62 @@
+@model IntegrityReportVm
+@{ ViewData["Title"] = "Ledger integrity"; bool isAdmin = User.IsInRole("Admin"); }
+<div class="page-head">
+    <div><h1>Ledger integrity</h1><p class="sub">Each posted voucher is sealed with SHA-256 over its content and the previous seal, forming a chain. This check recomputes every seal, compares the ledger to the sealed vouchers and walks the audit trail's own chain.</p></div>
+    <div class="actions"><a class="btn btn-primary" asp-action="Integrity"><i class="bi bi-arrow-clockwise"></i> Run check again</a></div>
+</div>
+<div class="alert @(Model.AllOk ? "alert-success" : "alert-danger")">
+    @if (Model.AllOk) { <span><i class="bi bi-shield-check"></i> All checks passed at @Fmt.DateTime(Model.CheckedAt). No posted record has been altered, removed or inserted out of order.</span> }
+    else { <span><i class="bi bi-shield-exclamation"></i> @Model.Issues.Count problem(s) found at @Fmt.DateTime(Model.CheckedAt). Details below.</span> }
+</div>
+<div class="row g-3">
+    <div class="col-xl-5">
+        <div class="sheet">
+            <h2>Checks</h2>
+            <div class="check"><i class="bi @(Model.VoucherChainOk ? "bi-check-circle st-good" : "bi-x-circle st-bad")"></i><div><div class="fw-semibold">Voucher hash chain</div><div class="small-print">@Model.VouchersChecked seals recomputed. Head: <span class="hash">@Fmt.ShortHash(Model.ChainHead)</span></div></div></div>
+            <div class="check"><i class="bi @(Model.LedgerMatchesVouchers ? "bi-check-circle st-good" : "bi-x-circle st-bad")"></i><div><div class="fw-semibold">Ledger matches sealed vouchers</div><div class="small-print">@Model.LedgerRowsChecked ledger rows compared on line count and totals.</div></div></div>
+            <div class="check"><i class="bi @(Model.LedgerBalanced ? "bi-check-circle st-good" : "bi-x-circle st-bad")"></i><div><div class="fw-semibold">Ledger balances</div><div class="small-print">Debits @Fmt.Money(Model.LedgerDebit) · credits @Fmt.Money(Model.LedgerCredit)</div></div></div>
+            <div class="check"><i class="bi @(Model.AuditChainOk ? "bi-check-circle st-good" : "bi-x-circle st-bad")"></i><div><div class="fw-semibold">Audit trail chain</div><div class="small-print">@Model.AuditRecordsChecked records. Head: <span class="hash">@Fmt.ShortHash(Model.AuditHead)</span></div></div></div>
+        </div>
+        @if (isAdmin)
+        {
+            <div class="sheet">
+                <h2>Research demonstration</h2>
+                <p class="small-print">Simulate an insider editing the database directly, bypassing the application, then re-run the check to watch the chain catch it. Use <em>Repair</em> to restore the demo data.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <form asp-action="SimulateTamper" method="post" data-confirm="Alter a ledger row directly in the database?"><input type="hidden" name="kind" value="ledger" /><button class="btn btn-outline-danger btn-sm" type="submit">Inflate a ledger row</button></form>
+                    <form asp-action="SimulateTamper" method="post" data-confirm="Back-date a sealed voucher directly in the database?"><input type="hidden" name="kind" value="voucher" /><button class="btn btn-outline-danger btn-sm" type="submit">Back-date a sealed voucher</button></form>
+                    <form asp-action="Repair" method="post"><button class="btn btn-outline-primary btn-sm" type="submit">Repair</button></form>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="col-xl-7">
+        <div class="sheet flush">
+            <h2>Findings</h2>
+            <div class="table-wrap">
+            <table class="ledger mt-2">
+                <thead><tr><th>Area</th><th>Record</th><th>Finding</th></tr></thead>
+                <tbody>
+                @foreach (var i in Model.Issues)
+                {
+                    <tr><td class="small fw-semibold">@i.Area</td>
+                        <td>@if (i.VoucherId.HasValue) { <a asp-controller="Vouchers" asp-action="Details" asp-route-id="@i.VoucherId">@i.Reference</a> } else { @i.Reference }</td>
+                        <td class="small st-bad">@i.Message</td></tr>
+                }
+                @if (!Model.Issues.Any()) { <tr><td colspan="3" class="empty"><i class="bi bi-link-45deg"></i>No findings. The chain is intact.</td></tr> }
+                </tbody>
+            </table>
+            </div>
+        </div>
+        <div class="sheet">
+            <h2>How the seal works</h2>
+            <div class="chain">
+                <div class="block"><div class="idx">Genesis</div><div class="hash">0000…0000</div></div>
+                <div class="block"><div class="idx">#n−1</div><div class="small-print">content + prev</div><div class="hash">h(n−1)</div></div>
+                <div class="block"><div class="idx">#n</div><div class="small-print">content + h(n−1)</div><div class="hash">h(n) = SHA-256</div></div>
+                <div class="block bad"><div class="idx">#n+1</div><div class="small-print">edited later</div><div class="hash">no longer matches</div></div>
+            </div>
+            <p class="small-print mb-0">Content covers voucher number, date, type, total and every line's account, debit, credit, party and cost centre. Changing any of these, or deleting a voucher, breaks every link after it.</p>
+        </div>
+    </div>
+</div>

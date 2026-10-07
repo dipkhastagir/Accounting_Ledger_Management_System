@@ -1,0 +1,69 @@
+@model VoucherIndexVm
+@{
+    ViewData["Title"] = "Vouchers";
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+}
+<div class="page-head">
+    <div><h1>Vouchers</h1><p class="sub">Every transaction, from draft to sealed. Posted vouchers can only be corrected by reversal.</p></div>
+    <div class="actions">
+        <partial name="_ExportLink" />
+        @if (canEdit)
+        {
+            <div class="btn-group">
+                <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New voucher</a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Choose type</span></button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    @foreach (VoucherType t in Enum.GetValues(typeof(VoucherType)))
+                    {
+                        <li><a class="dropdown-item" asp-action="Create" asp-route-type="@t">@t voucher</a></li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">Search</label><input name="search" value="@Model.Search" class="form-control" placeholder="Number, narration, reference" /></div>
+    <div><label class="form-label small">Type</label>
+        <select name="type" class="form-select"><option value="">All types</option>
+            @foreach (VoucherType t in Enum.GetValues(typeof(VoucherType))) { <option value="@t" selected="@(Model.Type == t)">@t</option> }
+        </select></div>
+    <div><label class="form-label small">Status</label>
+        <select name="status" class="form-select"><option value="">All statuses</option>
+            @foreach (VoucherStatus s in Enum.GetValues(typeof(VoucherStatus))) { <option value="@s" selected="@(Model.Status == s)">@s.Display()</option> }
+        </select></div>
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@(Model.From?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@(Model.To?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Filter</button> <a class="btn btn-link" asp-action="Index">Clear</a></div>
+</form>
+
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead>
+            <tr><th>Voucher</th><th>Date</th><th>Type</th><th>Narration</th><th>Entered by</th><th>Status</th><th>Seal</th><th class="num">Amount</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var v in Model.Result.Items)
+        {
+            <tr class="@(v.Status == VoucherStatus.Reversed ? "reversed" : "")">
+                <td><a asp-action="Details" asp-route-id="@v.Id">@v.VoucherNo</a></td>
+                <td>@Fmt.Date(v.VoucherDate)</td>
+                <td class="small-print">@v.VoucherType</td>
+                <td class="small-print">@v.Narration @if (v.IsSystemGenerated) { <span class="chip st-draft">System</span> }</td>
+                <td class="small-print">@v.CreatedBy?.FullName</td>
+                <td><span class="chip @Fmt.StatusCss(v.Status)">@v.Status.Display()</span></td>
+                <td class="hash">@(v.ChainIndex.HasValue ? "#" + v.ChainIndex : "")</td>
+                <td class="num">@Fmt.Money(v.TotalAmount)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="8" class="empty"><i class="bi bi-receipt"></i>No vouchers match these filters.</td></tr>
+        }
+        </tbody>
+    </table>
+    </div>
+</div>
+<partial name="_Pager" model="PagerVm.From(Model.Result)" />

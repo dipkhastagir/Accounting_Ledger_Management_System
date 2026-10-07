@@ -1,0 +1,54 @@
+@model AccountStatementVm
+<div class="table-wrap">
+<table class="ledger">
+    <thead>
+        <tr>
+            <th style="width:105px">Date</th>
+            <th style="width:120px">Voucher</th>
+            @if (Model.ShowAccountColumn) { <th>Account</th> }
+            <th>Particulars</th>
+            <th class="num">Debit</th>
+            <th class="num">Credit</th>
+            <th class="num">Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="opening">
+            <td>@Fmt.Date(Model.From)</td>
+            <td></td>
+            @if (Model.ShowAccountColumn) { <td></td> }
+            <td>Opening balance</td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num">@Fmt.DrCr(Model.Opening)</td>
+        </tr>
+        @foreach (var l in Model.Lines)
+        {
+            <tr>
+                <td>@Fmt.Date(l.Date)</td>
+                <td><a asp-controller="Vouchers" asp-action="Details" asp-route-id="@l.VoucherId">@l.VoucherNo</a></td>
+                @if (Model.ShowAccountColumn) { <td>@l.AccountName</td> }
+                <td>
+                    @if (!string.IsNullOrEmpty(l.Counterparts)) { <div>@l.Counterparts</div> }
+                    <div class="small-print">@l.Narration</div>
+                </td>
+                <td class="num dr">@Fmt.MoneyOrBlank(l.Debit)</td>
+                <td class="num cr">@Fmt.MoneyOrBlank(l.Credit)</td>
+                <td class="num">@Fmt.DrCr(l.Balance)</td>
+            </tr>
+        }
+        @if (!Model.Lines.Any())
+        {
+            <tr><td colspan="@(Model.ShowAccountColumn ? 7 : 6)" class="empty">No postings in this period.</td></tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="@(Model.ShowAccountColumn ? 4 : 3)">Closing balance on @Fmt.Date(Model.To)</td>
+            <td class="num dr">@Fmt.Money(Model.TotalDebit)</td>
+            <td class="num cr">@Fmt.Money(Model.TotalCredit)</td>
+            <td class="num">@Fmt.DrCr(Model.Closing)</td>
+        </tr>
+    </tfoot>
+</table>
+</div>

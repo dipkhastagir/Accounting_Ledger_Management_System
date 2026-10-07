@@ -1,0 +1,36 @@
+@model RatioVm
+@{
+    ViewData["Title"] = "Financial ratios";
+    string Show(RatioItem r) => r.Value == null ? "n/a" : r.Kind switch
+    {
+        "pct" => Fmt.Pct(r.Value.Value),
+        "money" => Fmt.Signed((decimal)r.Value.Value),
+        "months" => r.Value.Value.ToString("F1") + " months",
+        _ => r.Value.Value.ToString("F2") + "×"
+    };
+}
+<div class="page-head">
+    <div><h1>Financial ratios</h1><p class="sub">Balance-sheet figures as of @Fmt.Date(Model.AsOf); income and expense from @Fmt.Date(Model.PeriodFrom). Colours compare against common rules of thumb for small service firms.</p></div>
+    <form method="get" class="actions filters"><input type="date" name="asOf" value="@Fmt.Iso(Model.AsOf)" class="form-control" /><button class="btn btn-primary" type="submit">Update</button></form>
+</div>
+@foreach (var g in Model.Ratios.GroupBy(r => r.Group))
+{
+    <h2 class="sheet-title mt-2">@g.Key</h2>
+    <div class="row g-3 mb-3">
+        @foreach (var r in g)
+        {
+            <div class="col-md-6 col-xl-3">
+                <div class="sheet h-100 mb-0">
+                    <div class="small-print">@r.Name</div>
+                    <div class="st-@r.Status" style="font-family:var(--font-title);font-size:1.7rem">@Show(r)</div>
+                    <div class="small mt-1">@r.Meaning</div>
+                    <div class="small-print mt-2 fst-italic">@r.Formula</div>
+                </div>
+            </div>
+        }
+    </div>
+}
+<div class="sheet flush" style="max-width:640px">
+    <h2>Underlying figures</h2>
+    <table class="ledger mt-2"><tbody>@foreach (var f in Model.Figures) { <tr><td>@f.Key</td><td class="num">@Fmt.Signed(f.Value)</td></tr> }</tbody></table>
+</div>

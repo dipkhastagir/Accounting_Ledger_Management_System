@@ -1,0 +1,62 @@
+@model LoginVm
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in · TroyeeLedger</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="login-page">
+    <section class="login-art">
+        <div style="font-family:var(--font-title);font-size:1.3rem;color:#fff">TroyeeLedger</div>
+        <div>
+            <h1>Every entry balanced. Every posting sealed.</h1>
+            <p>Double-entry accounting with maker–checker approval, a SHA-256 hash-chained ledger and built-in forensic analytics that flag unusual transactions before an auditor has to.</p>
+        </div>
+        <div class="entry">Dr Office Rent Expense 95,000 &nbsp;/&nbsp; Cr Dutch-Bangla Bank 95,000</div>
+    </section>
+    <section class="login-form">
+        <div class="card-like">
+            <h2 class="mb-1">Sign in</h2>
+            <p class="small-print mb-4">Use your TroyeeLedger account.</p>
+            <form asp-action="Login" method="post">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label"></label>
+                    <input asp-for="Username" class="form-control" autocomplete="username" autofocus />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <div class="form-check mb-4">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2">Sign in</button>
+            </form>
+            <div class="demo-users">
+                <div class="mb-1 fw-semibold">Demo accounts</div>
+                <table>
+                    <tr><td>admin</td><td>Admin@@123</td><td class="muted">Administrator</td></tr>
+                    <tr><td>accountant</td><td>Account@@123</td><td class="muted">Maker</td></tr>
+                    <tr><td>checker</td><td>Checker@@123</td><td class="muted">Second accountant</td></tr>
+                    <tr><td>auditor</td><td>Audit@@123</td><td class="muted">Read-only auditor</td></tr>
+                    <tr><td>viewer</td><td>Viewer@@123</td><td class="muted">Read-only</td></tr>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

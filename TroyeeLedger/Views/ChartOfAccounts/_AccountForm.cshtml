@@ -1,0 +1,52 @@
+@model ChartOfAccount
+@{
+    var parents = (List<SelectListItem>)ViewBag.Parents;
+    bool locked = ViewBag.HasPostings is bool b && b;
+}
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+<input type="hidden" asp-for="Id" />
+<div class="row g-3">
+    <div class="col-md-3">
+        <label asp-for="Code" class="form-label"></label>
+        <input asp-for="Code" class="form-control" placeholder="e.g. 5009" />
+        <span asp-validation-for="Code" class="text-danger small"></span>
+    </div>
+    <div class="col-md-9">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" placeholder="e.g. Software Subscriptions" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="ParentId" class="form-label"></label>
+        <select asp-for="ParentId" asp-items="parents" class="form-select">
+            <option value="">— Top level (no parent) —</option>
+        </select>
+        <div class="form-text">The account inherits its place in every report from this group.</div>
+        <span asp-validation-for="ParentId" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="AccountType" class="form-label"></label>
+        <select asp-for="AccountType" asp-items="Html.GetEnumSelectList<AccountType>()" class="form-select"></select>
+        @if (locked) { <div class="form-text">Locked: the account has postings.</div> }
+        <span asp-validation-for="AccountType" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CashFlowCategory" class="form-label"></label>
+        <select asp-for="CashFlowCategory" asp-items="Html.GetEnumSelectList<CashFlowCategory>()" class="form-select"></select>
+        <div class="form-text">Automatic works for most accounts.</div>
+    </div>
+    <div class="col-12">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+    </div>
+    <div class="col-12 d-flex flex-wrap gap-4">
+        <div class="form-check"><input asp-for="IsGroup" class="form-check-input" /><label asp-for="IsGroup" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="IsCashOrBank" class="form-check-input" /><label asp-for="IsCashOrBank" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="IsCurrent" class="form-check-input" /><label asp-for="IsCurrent" class="form-check-label"></label></div>
+        <div class="form-check"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label"></label></div>
+    </div>
+    <div class="col-12">
+        <span asp-validation-for="IsGroup" class="text-danger small d-block"></span>
+        <span asp-validation-for="IsCashOrBank" class="text-danger small d-block"></span>
+    </div>
+</div>

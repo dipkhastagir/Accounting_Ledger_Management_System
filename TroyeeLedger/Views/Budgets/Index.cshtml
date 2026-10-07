@@ -1,0 +1,27 @@
+@model List<Budget>
+@{ ViewData["Title"] = "Budgets"; bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant"); }
+<div class="page-head">
+    <div><h1>Budgets</h1><p class="sub">Plan income and spending for a fiscal year, then track actuals against it as vouchers are posted.</p></div>
+    <div class="actions">@if (canEdit) { <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New budget</a> }</div>
+</div>
+@if (!Model.Any())
+{
+    <div class="sheet empty"><i class="bi bi-bullseye"></i>No budgets yet. Create one to compare plan against actual.</div>
+}
+else
+{
+    <div class="sheet flush">
+        <table class="ledger">
+            <thead><tr><th>Budget</th><th>Fiscal year</th><th class="num">Accounts</th><th class="num">Total planned</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var b in Model)
+            {
+                <tr><td><a asp-action="Details" asp-route-id="@b.Id">@b.Name</a><div class="small-print">@b.Notes</div></td><td>@b.FiscalYear?.Name</td><td class="num">@b.Lines.Count</td>
+                    <td class="num">@Fmt.Money(b.Lines.Sum(l => l.Amount))</td>
+                    <td class="text-end">@if (canEdit) { <a asp-action="Edit" asp-route-id="@b.Id" title="Edit"><i class="bi bi-pencil"></i></a> }</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <p class="small-print">Open a budget to see the income and expense split, variances and progress.</p>
+}

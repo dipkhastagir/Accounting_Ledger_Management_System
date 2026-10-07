@@ -1,0 +1,62 @@
+@model ChartOfAccount
+@{
+    ViewData["Title"] = Model.Code + " " + Model.Name;
+    var bal = ViewBag.Balance as AccountBalanceRow;
+    var stmt = ViewBag.Statement as AccountStatementVm;
+    var subtree = (List<AccountBalanceRow>)ViewBag.Subtree;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+}
+<div class="page-head">
+    <div>
+        <h1>@Model.Code · @Model.Name</h1>
+        <p class="sub">@Model.AccountType @(Model.IsGroup ? "group" : "account")@(Model.Parent != null ? " under " + Model.Parent.Name : "") · normal balance @(Model.IsDebitNature ? "debit" : "credit")</p>
+    </div>
+    <div class="actions">
+        @if (!Model.IsGroup) { <a class="btn btn-outline-primary" asp-controller="Ledger" asp-action="Account" asp-route-id="@Model.Id"><i class="bi bi-journal-text"></i> Full ledger</a> }
+        @if (canEdit)
+        {
+            @if (Model.IsGroup) { <a class="btn btn-outline-primary" asp-action="Create" asp-route-parentId="@Model.Id">Add sub-account</a> }
+            <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil"></i> Edit</a>
+        }
+    </div>
+</div>
+
+<div class="figures">
+    <div class="figure"><div class="label">Balance today</div><div class="value">@Fmt.Signed(bal?.Natural ?? 0)</div><div class="note">@(Model.IsDebitNature ? "Debit" : "Credit") balance</div></div>
+    <div class="figure"><div class="label">Total debits</div><div class="value dr">@Fmt.Money(bal?.Debit ?? 0)</div></div>
+    <div class="figure"><div class="label">Total credits</div><div class="value cr">@Fmt.Money(bal?.Credit ?? 0)</div></div>
+    <div class="figure"><div class="label">Status</div><div class="value" style="font-size:1.15rem">@(Model.IsActive ? "Active" : "Inactive")</div><div class="note">@(Model.IsCashOrBank ? "Cash/bank · " : "")@(Model.IsCurrent ? "Current" : "Non-current") · cash flow: @Model.CashFlowCategory.Display()</div></div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Description)) { <div class="sheet"><p class="mb-0">@Model.Description</p></div> }
+
+@if (Model.IsGroup)
+{
+    var start = subtree.FindIndex(r => r.AccountId == Model.Id);
+    var rows = new List<AccountBalanceRow>();
+    var baseLevel = start >= 0 ? subtree[start].Level : 0;
+    if (start >= 0)
+    {
+        for (int i = start + 1; i < subtree.Count && subtree[i].Level > baseLevel; i++) rows.Add(subtree[i]);
+    }
+    <div class="sheet flush">
+        <h2>Sub-accounts</h2>
+        <table class="ledger mt-2">
+            <thead><tr><th>Code</th><th>Account</th><th class="num">Balance</th></tr></thead>
+            <tbody>
+            @foreach (var r in rows)
+            {
+                <tr class="@(r.IsGroup ? "group" : "")"><td>@r.Code</td><td class="indent-@Math.Min(r.Level - baseLevel - 1, 4)"><a asp-action="Details" asp-route-id="@r.AccountId">@r.Name</a></td><td class="num">@Fmt.Signed(r.Natural)</td></tr>
+            }
+            @if (!rows.Any()) { <tr><td colspan="3" class="empty">This group has no sub-accounts yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+}
+else if (stmt != null)
+{
+    <div class="sheet flush">
+        <h2>Activity this fiscal year</h2>
+        <div class="mt-2"><partial name="_StatementTable" model="stmt" /></div>
+    </div>
+}

@@ -1,0 +1,5 @@
+@model BudgetFormVm
+@{ ViewData["Title"] = "New budget"; }
+<div class="page-head"><div><h1>New budget</h1></div></div>
+<form asp-action="Create" method="post"><partial name="_Form" model="Model" />
+    <button class="btn btn-primary" type="submit">Save budget</button> <a class="btn btn-link" asp-action="Index">Cancel</a></form>

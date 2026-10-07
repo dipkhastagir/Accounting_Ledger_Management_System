@@ -1,0 +1,61 @@
+@model Voucher
+@{
+    Layout = null;
+    var s = (CompanySetting)ViewBag.Settings;
+    var lines = Model.Details.OrderBy(d => d.LineNo).ToList();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@Model.VoucherNo</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { background: #fff; }
+        .page { max-width: 820px; margin: 2rem auto; padding: 0 1rem; }
+        .sign { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 4rem; }
+        .sign div { border-top: 1px solid var(--ink); padding-top: .4rem; font-size: .85rem; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="d-flex align-items-start mb-4">
+        <div>
+            <div style="font-family:var(--font-title);font-size:1.6rem">@s.CompanyName</div>
+            <div class="small-print">@s.Address</div>
+            <div class="small-print">@s.Phone @(s.TaxId != null ? "· BIN " + s.TaxId : "")</div>
+        </div>
+        <div class="ms-auto text-end">
+            <div style="font-family:var(--font-title);font-size:1.4rem">@Model.VoucherType voucher</div>
+            <div>@Model.VoucherNo</div>
+            <div class="small-print">Date: @Fmt.Date(Model.VoucherDate)</div>
+            @if (Model.Reference != null) { <div class="small-print">Ref: @Model.Reference</div> }
+        </div>
+    </div>
+    <p><strong>Narration:</strong> @Model.Narration</p>
+    <table class="ledger">
+        <thead><tr><th>Account</th><th>Particulars</th><th class="num">Debit (@s.CurrencySymbol)</th><th class="num">Credit (@s.CurrencySymbol)</th></tr></thead>
+        <tbody>
+        @foreach (var d in lines)
+        {
+            <tr>
+                <td>@d.Account?.Code — @d.Account?.Name</td>
+                <td class="small-print">@d.LineNarration @(d.Party != null ? "(" + d.Party.Name + ")" : "") @(d.CostCenter != null ? "[" + d.CostCenter.Code + "]" : "")</td>
+                <td class="num">@Fmt.MoneyOrBlank(d.Debit)</td>
+                <td class="num">@Fmt.MoneyOrBlank(d.Credit)</td>
+            </tr>
+        }
+        </tbody>
+        <tfoot><tr><td colspan="2">Total</td><td class="num">@Fmt.Money(lines.Sum(d => d.Debit))</td><td class="num">@Fmt.Money(lines.Sum(d => d.Credit))</td></tr></tfoot>
+    </table>
+    <p class="small-print mt-3">Status: @Model.Status.Display() @if (Model.Hash != null) { <span>· Seal #@Model.ChainIndex · <span class="hash">@Model.Hash</span></span> }</p>
+    <div class="sign">
+        <div>Prepared by<br />@Model.CreatedBy?.FullName</div>
+        <div>Approved by<br />@(Model.ApprovedBy?.FullName ?? "")</div>
+        <div>Received by</div>
+    </div>
+    <div class="text-center mt-5 no-print"><button class="btn btn-primary" onclick="window.print()">Print</button></div>
+</div>
+</body>
+</html>

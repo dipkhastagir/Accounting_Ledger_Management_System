@@ -1,0 +1,46 @@
+@{ ViewData["Title"] = "About the system"; }
+<div class="page-head"><div><h1>About TroyeeLedger</h1><p class="sub">An accounting and ledger management system built as a research platform for trustworthy, self-auditing bookkeeping.</p></div></div>
+<div class="row g-3">
+    <div class="col-xl-7">
+        <div class="sheet">
+            <h2>What makes it different</h2>
+            <p><strong>Tamper-evident ledger.</strong> Every approved voucher is sealed with a SHA-256 fingerprint that includes the previous voucher's fingerprint. The audit trail is chained the same way. Any later edit or deletion — even made directly in SQL Server — is detected by the integrity check.</p>
+            <p><strong>Maker–checker with risk-aware approval.</strong> Vouchers move from draft to approval to posting. Approvers see an explainable risk score before they approve, and the system can forbid self-approval.</p>
+            <p><strong>Explainable forensic analytics.</strong> Benford's-law first-digit testing (chi-square, MAD, per-digit z) and ten transparent anomaly rules combining statistical outliers with internal-control red flags. Every flag states its reason and point value.</p>
+            <p><strong>Immutable corrections.</strong> Posted vouchers are never edited; they are reversed, so the ledger always shows both the mistake and its correction.</p>
+            <p class="mb-0"><strong>Analytics.</strong> Liquidity, solvency and profitability ratios, cash runway, budget variance and a least-squares profit forecast.</p>
+        </div>
+        <div class="sheet">
+            <h2>Research directions</h2>
+            <p>Natural extensions for a paper or thesis: comparing rule-based scores with unsupervised models (Isolation Forest, autoencoders) on the exported ledger; measuring detection rates on synthetic fraud injected into the seeded data; anchoring the chain head to an external timestamping service; and evaluating the usability cost of maker–checker controls in small firms.</p>
+            <p class="mb-0 small-print">The demo data contains planted irregularities — a late-night round consultancy payment, a duplicate supplier payment, an amount just under the review limit, a backdated entry and self-approvals — to serve as ground truth.</p>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="sheet">
+            <h2>Data API</h2>
+            <p class="small-print">Read-only JSON endpoints that use your signed-in session. Open them in the browser or call them from a notebook with the session cookie.</p>
+            <table class="ledger">
+                <tbody>
+                    <tr><td class="hash">/api/accounts</td><td class="small">Chart of accounts</td></tr>
+                    <tr><td class="hash">/api/trial-balance?asOf=</td><td class="small">Trial balance</td></tr>
+                    <tr><td class="hash">/api/ledger?from=&amp;to=</td><td class="small">Ledger rows with metadata</td></tr>
+                    <tr><td class="hash">/api/vouchers/{no}</td><td class="small">One voucher with its seal</td></tr>
+                    <tr><td class="hash">/api/monthly?months=12</td><td class="small">Monthly income and expense</td></tr>
+                    <tr><td class="hash">/api/forensics/integrity</td><td class="small">Integrity report</td></tr>
+                    <tr><td class="hash">/api/forensics/benford</td><td class="small">Benford test</td></tr>
+                    <tr><td class="hash">/api/forensics/anomalies</td><td class="small">Risk-scored vouchers</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="sheet">
+            <h2>Technology</h2>
+            <dl class="kv">
+                <dt>Platform</dt><dd>ASP.NET Core 10 MVC, C#</dd>
+                <dt>Data</dt><dd>SQL Server via Entity Framework Core 10</dd>
+                <dt>Security</dt><dd>Cookie authentication, PBKDF2-SHA256 passwords, role-based authorisation, anti-forgery tokens</dd>
+                <dt>Interface</dt><dd>Razor views, Bootstrap 5, Chart.js (bundled locally)</dd>
+            </dl>
+        </div>
+    </div>
+</div>

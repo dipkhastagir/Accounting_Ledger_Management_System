@@ -1,0 +1,38 @@
+@model Party
+@{
+    ViewData["Title"] = Model.Name;
+    var stmt = (AccountStatementVm)ViewBag.Statement;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+}
+<div class="page-head">
+    <div><h1>@Model.Name</h1><p class="sub">@Model.PartyType · @Model.Code @(Model.IsActive ? "" : "· inactive")</p></div>
+    <div class="actions">@if (canEdit) { <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil"></i> Edit</a> }</div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="sheet">
+            <h2>Contact</h2>
+            <dl class="kv">
+                <dt>Phone</dt><dd>@(Model.Phone ?? "—")</dd>
+                <dt>Email</dt><dd>@(Model.Email ?? "—")</dd>
+                <dt>Address</dt><dd>@(Model.Address ?? "—")</dd>
+                <dt>BIN / TIN</dt><dd>@(Model.TaxId ?? "—")</dd>
+                <dt>Credit limit</dt><dd>@(Model.CreditLimit > 0 ? Fmt.Money(Model.CreditLimit) : "None")</dd>
+            </dl>
+        </div>
+        <div class="sheet">
+            <div class="small-print">Balance on @Fmt.Date(stmt.To)</div>
+            <div class="statement-total" style="font-size:1.8rem">@Fmt.DrCr(stmt.Closing)</div>
+            <div class="small-print">@(stmt.Closing > 0 ? "They owe us" : stmt.Closing < 0 ? "We owe them" : "Settled")</div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <form method="get" class="sheet filters">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(stmt.From)" class="form-control" /></div>
+            <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(stmt.To)" class="form-control" /></div>
+            <div><button class="btn btn-primary" type="submit">Update</button></div>
+        </form>
+        <div class="sheet flush"><h2>Statement of account</h2><div class="mt-2"><partial name="_StatementTable" model="stmt" /></div></div>
+    </div>
+</div>

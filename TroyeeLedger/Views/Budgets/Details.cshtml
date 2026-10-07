@@ -1,0 +1,52 @@
+@model BudgetVarianceVm
+@{
+    ViewData["Title"] = Model.Budget.Name;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+    var inc = Model.Rows.Where(r => r.Type == AccountType.Income).ToList();
+    var exp = Model.Rows.Where(r => r.Type == AccountType.Expense).ToList();
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    string J(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+}
+<div class="page-head">
+    <div><h1>@Model.Budget.Name</h1><p class="sub">@Model.Budget.FiscalYear?.Name · @Fmt.Pct(Model.ElapsedFraction, 0) of the year has elapsed, so "expected to date" is that share of each annual amount.</p></div>
+    <div class="actions">@if (canEdit) { <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Budget.Id"><i class="bi bi-pencil"></i> Edit budget</a> }</div>
+</div>
+<div class="figures">
+    <div class="figure"><div class="label">Income achieved</div><div class="value">@Fmt.Money(inc.Sum(r => r.Actual))</div><div class="note">of @Fmt.Money(inc.Sum(r => r.Budget)) target</div></div>
+    <div class="figure"><div class="label">Expenses incurred</div><div class="value">@Fmt.Money(exp.Sum(r => r.Actual))</div><div class="note">of @Fmt.Money(exp.Sum(r => r.Budget)) limit</div></div>
+    <div class="figure"><div class="label">Lines over budget</div><div class="value st-bad">@Model.Rows.Count(r => r.Status == "Over budget")</div></div>
+</div>
+<div class="sheet"><div class="chart-box" style="height:@(Math.Max(300, Model.Rows.Count * 34))px"><canvas id="bva"></canvas></div></div>
+@foreach (var grp in new[] { ("Income targets", inc), ("Expense limits", exp) })
+{
+    <div class="sheet flush">
+        <h2>@grp.Item1</h2>
+        <div class="table-wrap">
+        <table class="ledger mt-2">
+            <thead><tr><th>Account</th><th class="num">Annual</th><th class="num">Expected to date</th><th class="num">Actual</th><th class="num">Variance</th><th style="width:160px">Used</th><th>Status</th></tr></thead>
+            <tbody>
+            @foreach (var r in grp.Item2)
+            {
+                var pct = Math.Min(100, r.Utilization * 100);
+                var cls = r.Status == "Over budget" ? "over" : r.Status is "Ahead of plan" or "Behind plan" ? "warn" : "";
+                <tr><td><a asp-controller="Ledger" asp-action="Account" asp-route-id="@r.AccountId">@r.Code · @r.Name</a></td>
+                    <td class="num">@Fmt.Money(r.Budget)</td><td class="num muted">@Fmt.Money(r.ExpectedToDate)</td><td class="num">@Fmt.Money(r.Actual)</td>
+                    <td class="num @(r.Variance < 0 ? "cr" : "")">@Fmt.Signed(r.Variance)</td>
+                    <td><div class="bar"><span class="@cls" style="width:@pct.ToString("F0", inv)%"></span></div><span class="small-print">@Fmt.Pct(r.Utilization, 0)</span></td>
+                    <td class="small">@r.Status</td></tr>
+            }
+            </tbody>
+        </table>
+        </div>
+    </div>
+}
+@section Scripts {
+<script>
+new Chart(document.getElementById("bva"), { type: "bar",
+  data: { labels: @Html.Raw(J(Model.Rows.Select(r => r.Name))),
+    datasets: [ { label: "Annual budget", data: @Html.Raw(J(Model.Rows.Select(r => r.Budget))), backgroundColor: "#DCE7E1" },
+                { label: "Expected to date", data: @Html.Raw(J(Model.Rows.Select(r => r.ExpectedToDate))), backgroundColor: "#C9A86A" },
+                { label: "Actual", data: @Html.Raw(J(Model.Rows.Select(r => r.Actual))), backgroundColor: "#1E4636" } ] },
+  options: { indexAxis: "y", plugins: { tooltip: { callbacks: { label: c => c.dataset.label + ": " + TL.fmt(c.raw) } } } } });
+</script>
+}

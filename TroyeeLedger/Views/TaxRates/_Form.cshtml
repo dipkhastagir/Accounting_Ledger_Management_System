@@ -1,0 +1,12 @@
+@model TaxRate
+@{ var accounts = (List<SelectListItem>)ViewBag.Accounts; }
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+<input type="hidden" asp-for="Id" />
+<div class="row g-3">
+    <div class="col-md-6"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" placeholder="e.g. VAT 7.5% (services)" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+    <div class="col-md-3"><label asp-for="RatePercent" class="form-label"></label><input asp-for="RatePercent" type="number" step="0.01" class="form-control" /><span asp-validation-for="RatePercent" class="text-danger small"></span></div>
+    <div class="col-md-3"><label asp-for="Kind" class="form-label"></label><select asp-for="Kind" asp-items="Html.GetEnumSelectList<TaxKind>()" class="form-select"></select></div>
+    <div class="col-md-8"><label asp-for="AccountId" class="form-label"></label><select asp-for="AccountId" asp-items="accounts" class="form-select"></select>
+        <div class="form-text">Output VAT normally posts to a liability; input VAT to an asset.</div></div>
+    <div class="col-12"><div class="form-check"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label"></label></div></div>
+</div>

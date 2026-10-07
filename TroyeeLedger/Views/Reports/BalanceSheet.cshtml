@@ -1,0 +1,58 @@
+@model BalanceSheetVm
+@{ ViewData["Title"] = "Balance sheet"; }
+<div class="page-head">
+    <div><h1>Balance sheet</h1><p class="sub">Statement of financial position as of @Fmt.Date(Model.AsOf).</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">As of</label><input type="date" name="asOf" value="@Fmt.Iso(Model.AsOf)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="alert @(Model.IsBalanced ? "alert-success" : "alert-danger")">
+    @if (Model.IsBalanced) { <span><i class="bi bi-check-circle"></i> Assets (@Fmt.Money(Model.TotalAssets)) = Liabilities + Equity (@Fmt.Money(Model.TotalLiabilities + Model.TotalEquityWithEarnings)).</span> }
+    else { <span><i class="bi bi-x-circle"></i> The accounting equation is off by @Fmt.Signed(Model.Difference).</span> }
+</div>
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="sheet flush">
+            <h2>Assets</h2>
+            <table class="ledger mt-2">
+                <tbody>
+                @foreach (var r in Model.Assets)
+                {
+                    <tr class="@(r.IsGroup ? "group" : "") lvl-@r.Level"><td class="indent-@Math.Min(r.Level, 4)">@r.Name</td><td class="num">@Fmt.Signed(r.Natural)</td></tr>
+                }
+                </tbody>
+                <tfoot><tr><td>Total assets</td><td class="num">@Fmt.Money(Model.TotalAssets)</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="sheet flush">
+            <h2>Liabilities</h2>
+            <table class="ledger mt-2">
+                <tbody>
+                @foreach (var r in Model.Liabilities)
+                {
+                    <tr class="@(r.IsGroup ? "group" : "") lvl-@r.Level"><td class="indent-@Math.Min(r.Level, 4)">@r.Name</td><td class="num">@Fmt.Signed(r.Natural)</td></tr>
+                }
+                </tbody>
+                <tfoot><tr><td>Total liabilities</td><td class="num">@Fmt.Money(Model.TotalLiabilities)</td></tr></tfoot>
+            </table>
+        </div>
+        <div class="sheet flush">
+            <h2>Equity</h2>
+            <table class="ledger mt-2">
+                <tbody>
+                @foreach (var r in Model.Equity)
+                {
+                    <tr class="@(r.IsGroup ? "group" : "") lvl-@r.Level"><td class="indent-@Math.Min(r.Level, 4)">@r.Name</td><td class="num">@Fmt.Signed(r.Natural)</td></tr>
+                }
+                <tr><td class="indent-1 fst-italic">Current period earnings (unclosed)</td><td class="num">@Fmt.Signed(Model.CurrentEarnings)</td></tr>
+                </tbody>
+                <tfoot><tr><td>Total equity</td><td class="num">@Fmt.Money(Model.TotalEquityWithEarnings)</td></tr></tfoot>
+            </table>
+        </div>
+        <div class="sheet d-flex"><span class="statement-total">Liabilities and equity</span><span class="statement-total ms-auto num">@Fmt.Money(Model.TotalLiabilities + Model.TotalEquityWithEarnings)</span></div>
+    </div>
+</div>

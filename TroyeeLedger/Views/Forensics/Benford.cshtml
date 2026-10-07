@@ -1,0 +1,45 @@
+@model BenfordVm
+@{ ViewData["Title"] = "Benford's law test"; string J(object o) => System.Text.Json.JsonSerializer.Serialize(o); }
+<div class="page-head">
+    <div><h1>Benford's law test</h1><p class="sub">In naturally occurring financial data the first digit is 1 about 30% of the time and 9 under 5%. Invented or manipulated amounts tend to drift from that curve.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Run test</button></div>
+</form>
+@if (Model.SmallSample) { <div class="alert alert-warning">Only @Model.N amounts in this window. Benford tests need a few hundred observations to be reliable; widen the dates.</div> }
+<div class="figures">
+    <div class="figure"><div class="label">Amounts tested</div><div class="value">@Model.N</div><div class="note">Ledger lines of 10 or more; reversals and closing entries excluded</div></div>
+    <div class="figure"><div class="label">Mean absolute deviation</div><div class="value">@Model.Mad.ToString("F4")</div><div class="note">@Model.Conformity (Nigrini bands)</div></div>
+    <div class="figure"><div class="label">Chi-square (8 df)</div><div class="value">@Model.ChiSquare.ToString("F2")</div><div class="note">Critical value @BenfordVm.ChiCritical at 5% — @(Model.PassesChiSquare ? "conforms" : "deviates")</div></div>
+</div>
+<div class="row g-3">
+    <div class="col-xl-7"><div class="sheet"><div class="chart-box tall"><canvas id="bf"></canvas></div></div></div>
+    <div class="col-xl-5">
+        <div class="sheet flush">
+            <table class="ledger">
+                <thead><tr><th>Digit</th><th class="num">Count</th><th class="num">Observed</th><th class="num">Expected</th><th class="num">z</th></tr></thead>
+                <tbody>
+                @foreach (var d in Model.Digits)
+                {
+                    <tr><td class="fw-semibold">@d.Digit</td><td class="num">@d.Count</td><td class="num">@Fmt.Pct(d.Observed)</td><td class="num muted">@Fmt.Pct(d.Expected)</td>
+                        <td class="num @(d.Significant ? "st-bad fw-semibold" : "")">@d.Z.ToString("F2")</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <p class="small-print">z above 1.96 marks a digit whose frequency differs significantly (5% level, with continuity correction). MAD bands: ≤0.006 close, ≤0.012 acceptable, ≤0.015 marginal, above that nonconformity.</p>
+    </div>
+</div>
+@section Scripts {
+<script>
+new Chart(document.getElementById("bf"), { type: "bar",
+  data: { labels: [1,2,3,4,5,6,7,8,9],
+    datasets: [ { label: "Observed %", data: @Html.Raw(J(Model.Digits.Select(d => Math.Round(d.Observed * 100, 2)))),
+                  backgroundColor: @Html.Raw(J(Model.Digits.Select(d => d.Significant ? "#A3302A" : "#1E4636"))) },
+                { label: "Benford expected %", type: "line", data: @Html.Raw(J(Model.Digits.Select(d => Math.Round(d.Expected * 100, 2)))), borderColor: "#A9792B", backgroundColor: "#A9792B" } ] },
+  options: { scales: { y: { title: { display: true, text: "Share of amounts (%)" } } } } });
+</script>
+}

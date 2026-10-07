@@ -1,0 +1,121 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string Active(string c, string? a = null) => c == controller && (a == null || a == action) ? "active" : "";
+    var fullName = User.FindFirst("FullName")?.Value ?? User.Identity?.Name;
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+    var pending = ViewData["PendingCount"] as int? ?? 0;
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Accountant");
+    bool isAdmin = User.IsInRole("Admin");
+    bool canReview = User.IsInRole("Admin") || User.IsInRole("Auditor");
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · TroyeeLedger</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231E4636'/><path d='M9 9h14M9 15h14M9 21h9' stroke='%23A9792B' stroke-width='2.5'/></svg>" />
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Main navigation">
+        <div class="brand d-flex align-items-start">
+            <div>
+                <a asp-controller="Home" asp-action="Index">TroyeeLedger</a>
+                <span class="company">@ViewData["CompanyName"]</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-auto d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+        </div>
+        <nav>
+            <a class="nav-link @Active("Home", "Index")" asp-controller="Home" asp-action="Index"><i class="bi bi-house"></i> Dashboard</a>
+
+            <div class="group">Bookkeeping</div>
+            <a class="nav-link @Active("Vouchers", "Index")@Active("Vouchers", "Details")@Active("Vouchers", "Create")@Active("Vouchers", "Edit")" asp-controller="Vouchers" asp-action="Index"><i class="bi bi-receipt"></i> Vouchers</a>
+            @if (canEdit)
+            {
+                <a class="nav-link @Active("Vouchers", "Approvals")" asp-controller="Vouchers" asp-action="Approvals"><i class="bi bi-check2-square"></i> Approvals @if (pending > 0) {<span class="badge-count">@pending</span>}</a>
+            }
+            <a class="nav-link @Active("ChartOfAccounts")" asp-controller="ChartOfAccounts" asp-action="Index"><i class="bi bi-diagram-3"></i> Chart of accounts</a>
+            <a class="nav-link @Active("Ledger", "Index")@Active("Ledger", "Account")" asp-controller="Ledger" asp-action="Index"><i class="bi bi-journal-text"></i> Account ledgers</a>
+            <a class="nav-link @Active("Ledger", "DayBook")" asp-controller="Ledger" asp-action="DayBook"><i class="bi bi-calendar3"></i> Day book</a>
+            <a class="nav-link @Active("Ledger", "CashBook")" asp-controller="Ledger" asp-action="CashBook"><i class="bi bi-cash-stack"></i> Cash book</a>
+            <a class="nav-link @Active("Parties")" asp-controller="Parties" asp-action="Index"><i class="bi bi-people"></i> Customers &amp; suppliers</a>
+
+            <div class="group">Statements</div>
+            <a class="nav-link @Active("Reports", "Index")" asp-controller="Reports" asp-action="Index"><i class="bi bi-files"></i> All reports</a>
+            <a class="nav-link @Active("Reports", "TrialBalance")" asp-controller="Reports" asp-action="TrialBalance"><i class="bi bi-list-columns"></i> Trial balance</a>
+            <a class="nav-link @Active("Reports", "ProfitLoss")" asp-controller="Reports" asp-action="ProfitLoss"><i class="bi bi-graph-up"></i> Profit &amp; loss</a>
+            <a class="nav-link @Active("Reports", "BalanceSheet")" asp-controller="Reports" asp-action="BalanceSheet"><i class="bi bi-layout-split"></i> Balance sheet</a>
+            <a class="nav-link @Active("Reports", "CashFlow")" asp-controller="Reports" asp-action="CashFlow"><i class="bi bi-water"></i> Cash flow</a>
+
+            <div class="group">Planning</div>
+            <a class="nav-link @Active("Budgets")" asp-controller="Budgets" asp-action="Index"><i class="bi bi-bullseye"></i> Budgets</a>
+            <a class="nav-link @Active("Recurring")" asp-controller="Recurring" asp-action="Index"><i class="bi bi-arrow-repeat"></i> Recurring vouchers</a>
+            <a class="nav-link @Active("BankReconciliation")" asp-controller="BankReconciliation" asp-action="Index"><i class="bi bi-bank"></i> Bank reconciliation</a>
+
+            <div class="group">Assurance &amp; insight</div>
+            <a class="nav-link @Active("Forensics", "Index")@Active("Forensics", "Benford")@Active("Forensics", "Anomalies")@Active("Forensics", "Segregation")" asp-controller="Forensics" asp-action="Index"><i class="bi bi-search"></i> Forensic analytics</a>
+            <a class="nav-link @Active("Forensics", "Integrity")" asp-controller="Forensics" asp-action="Integrity"><i class="bi bi-link-45deg"></i> Ledger integrity</a>
+            <a class="nav-link @Active("Analytics", "Ratios")" asp-controller="Analytics" asp-action="Ratios"><i class="bi bi-speedometer2"></i> Financial ratios</a>
+            <a class="nav-link @Active("Analytics", "Trends")" asp-controller="Analytics" asp-action="Trends"><i class="bi bi-activity"></i> Trends &amp; forecast</a>
+            @if (canReview)
+            {
+                <a class="nav-link @Active("AuditLog")" asp-controller="AuditLog" asp-action="Index"><i class="bi bi-shield-check"></i> Audit trail</a>
+            }
+
+            <div class="group">Setup</div>
+            <a class="nav-link @Active("CostCenters")" asp-controller="CostCenters" asp-action="Index"><i class="bi bi-diagram-2"></i> Cost centres</a>
+            <a class="nav-link @Active("TaxRates")" asp-controller="TaxRates" asp-action="Index"><i class="bi bi-percent"></i> VAT rates</a>
+            <a class="nav-link @Active("FiscalYears")" asp-controller="FiscalYears" asp-action="Index"><i class="bi bi-calendar-range"></i> Fiscal years</a>
+            @if (isAdmin)
+            {
+                <a class="nav-link @Active("Users")" asp-controller="Users" asp-action="Index"><i class="bi bi-person-gear"></i> Users</a>
+                <a class="nav-link @Active("Settings")" asp-controller="Settings" asp-action="Index"><i class="bi bi-gear"></i> Settings</a>
+            }
+            <a class="nav-link @Active("Home", "About")" asp-controller="Home" asp-action="About"><i class="bi bi-info-circle"></i> About the system</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="btn btn-outline-primary btn-sm d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open navigation">
+                <i class="bi bi-list"></i>
+            </button>
+            @if (canEdit)
+            {
+                <a class="btn btn-primary btn-sm" asp-controller="Vouchers" asp-action="Create"><i class="bi bi-plus-lg"></i> New voucher</a>
+            }
+            <div class="who">
+                <span class="role">@role</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">@fullName</button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile">My profile</a></li>
+                        <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change password</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                <button class="dropdown-item" type="submit">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <partial name="_Flash" />
+            @RenderBody()
+        </main>
+    </div>
+</div>
+<script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="~/lib/chartjs/chart.umd.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

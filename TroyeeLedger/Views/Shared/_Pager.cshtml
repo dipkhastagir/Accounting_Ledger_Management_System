@@ -1,0 +1,24 @@
+@model PagerVm
+@{
+    var query = Context.Request.Query.Where(k => k.Key != "page").ToDictionary(k => k.Key, k => (string?)k.Value.ToString());
+    string Link(int p)
+    {
+        var d = new Dictionary<string, string?>(query) { ["page"] = p.ToString() };
+        return Context.Request.Path + QueryString.Create(d).ToString();
+    }
+    int start = Math.Max(1, Model.Page - 3), end = Math.Min(Model.TotalPages, Model.Page + 3);
+}
+@if (Model.TotalPages > 1)
+{
+    <nav class="d-flex align-items-center gap-3 mt-3 no-print" aria-label="Pages">
+        <span class="small-print">Page @Model.Page of @Model.TotalPages · @Model.TotalCount records</span>
+        <ul class="pagination pagination-sm mb-0 ms-auto">
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")"><a class="page-link" href="@Link(Model.Page - 1)">Previous</a></li>
+            @for (int p = start; p <= end; p++)
+            {
+                <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" href="@Link(p)">@p</a></li>
+            }
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")"><a class="page-link" href="@Link(Model.Page + 1)">Next</a></li>
+        </ul>
+    </nav>
+}

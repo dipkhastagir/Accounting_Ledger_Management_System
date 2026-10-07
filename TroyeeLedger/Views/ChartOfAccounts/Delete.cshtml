@@ -1,0 +1,24 @@
+@model ChartOfAccount
+@{
+    ViewData["Title"] = "Delete " + Model.Code;
+    var blockers = (List<string>)ViewBag.Blockers;
+}
+<div class="page-head"><div><h1>Delete @Model.Code · @Model.Name?</h1></div></div>
+<div class="sheet" style="max-width:700px">
+    @if (blockers.Any())
+    {
+        <p>This account can't be deleted:</p>
+        <ul>@foreach (var b in blockers) { <li>@b</li> }</ul>
+        <p class="small-print">To stop using it, edit the account and clear <em>Active</em>. It will disappear from voucher entry but stay in historic reports.</p>
+        <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit account</a>
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Back</a>
+    }
+    else
+    {
+        <p>The account has never been used, so it can be removed permanently.</p>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+            <button class="btn btn-danger" type="submit">Delete account</button>
+            <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Keep it</a>
+        </form>
+    }
+</div>

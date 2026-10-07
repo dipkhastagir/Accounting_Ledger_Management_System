@@ -1,0 +1,36 @@
+@model SodVm
+@{ ViewData["Title"] = "Segregation of duties"; var inv = System.Globalization.CultureInfo.InvariantCulture; }
+<div class="page-head"><div><h1>Segregation of duties</h1><p class="sub">No single person should both record and approve a transaction. This shows who creates and who approves, and lists exceptions.</p></div></div>
+<div class="sheet flush">
+    <h2>Workload by user</h2>
+    <div class="table-wrap">
+    <table class="ledger mt-2">
+        <thead><tr><th>User</th><th>Role</th><th class="num">Created</th><th class="num">Approved</th><th class="num">Self-approved</th><th style="width:180px">Self-approval rate</th></tr></thead>
+        <tbody>
+        @foreach (var u in Model.Users)
+        {
+            var rate = u.Created == 0 ? 0 : (double)u.SelfApproved / u.Created;
+            <tr><td>@u.FullName <span class="small-print">@u.UserName</span></td><td class="small-print">@u.Role</td><td class="num">@u.Created</td><td class="num">@u.Approved</td>
+                <td class="num @(u.SelfApproved > 0 ? "st-bad fw-semibold" : "")">@u.SelfApproved</td>
+                <td><div class="bar"><span class="@(rate > 0 ? "over" : "")" style="width:@((rate * 100).ToString("F0", inv))%"></span></div><span class="small-print">@Fmt.Pct(rate)</span></td></tr>
+        }
+        </tbody>
+    </table>
+    </div>
+</div>
+<div class="sheet flush">
+    <h2>Exceptions</h2>
+    <div class="table-wrap">
+    <table class="ledger mt-2">
+        <thead><tr><th>Voucher</th><th>Date</th><th>User</th><th>Narration</th><th class="num">Amount</th></tr></thead>
+        <tbody>
+        @foreach (var v in Model.Violations)
+        {
+            <tr><td><a asp-controller="Vouchers" asp-action="Details" asp-route-id="@v.Id">@v.VoucherNo</a></td><td>@Fmt.Date(v.VoucherDate)</td><td>@v.CreatedBy?.FullName</td><td class="small-print">@v.Narration</td><td class="num">@Fmt.Money(v.TotalAmount)</td></tr>
+        }
+        @if (!Model.Violations.Any()) { <tr><td colspan="5" class="empty">Every posted voucher was approved by someone other than its author.</td></tr> }
+        </tbody>
+    </table>
+    </div>
+</div>
+<p class="small-print">Turn on "Block self-approval" in Settings to prevent new exceptions. Existing ones remain visible for audit.</p>

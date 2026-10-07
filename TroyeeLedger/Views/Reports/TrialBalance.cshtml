@@ -1,0 +1,36 @@
+@model TrialBalanceVm
+@{ ViewData["Title"] = "Trial balance"; }
+<div class="page-head">
+    <div><h1>Trial balance</h1><p class="sub">As of @Fmt.Date(Model.AsOf). Totals use posting accounts only; group rows show roll-ups.</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">As of</label><input type="date" name="asOf" value="@Fmt.Iso(Model.AsOf)" class="form-control" /></div>
+    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="hideZero" value="true" id="hz" checked="@Model.HideZero" /><input type="hidden" name="hideZero" value="false" /><label class="form-check-label" for="hz">Hide zero balances</label></div>
+    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="groups" value="true" id="gr" checked="@Model.ShowGroups" /><input type="hidden" name="groups" value="false" /><label class="form-check-label" for="gr">Show groups</label></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="alert @(Model.IsBalanced ? "alert-success" : "alert-danger")">
+    @if (Model.IsBalanced) { <span><i class="bi bi-check-circle"></i> The books balance: total debits equal total credits.</span> }
+    else { <span><i class="bi bi-x-circle"></i> Out of balance by @Fmt.Money(Math.Abs(Model.TotalDebit - Model.TotalCredit)). Run the integrity check.</span> }
+</div>
+<div class="sheet flush">
+    <div class="table-wrap">
+    <table class="ledger">
+        <thead><tr><th style="width:90px">Code</th><th>Account</th><th>Type</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr class="@(r.IsGroup ? "group" : "") lvl-@r.Level">
+                <td>@r.Code</td>
+                <td class="indent-@Math.Min(r.Level, 4)">@if (r.IsGroup) { @r.Name } else { <a asp-controller="Ledger" asp-action="Account" asp-route-id="@r.AccountId">@r.Name</a> }</td>
+                <td class="small-print">@r.Type</td>
+                <td class="num dr">@(r.IsGroup ? "" : Fmt.MoneyOrBlank(r.NetDebit))</td>
+                <td class="num cr">@(r.IsGroup ? "" : Fmt.MoneyOrBlank(r.NetCredit))</td>
+            </tr>
+        }
+        </tbody>
+        <tfoot><tr><td colspan="3">Total</td><td class="num dr">@Fmt.Money(Model.TotalDebit)</td><td class="num cr">@Fmt.Money(Model.TotalCredit)</td></tr></tfoot>
+    </table>
+    </div>
+</div>

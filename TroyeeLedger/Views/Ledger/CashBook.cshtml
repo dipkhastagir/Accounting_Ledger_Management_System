@@ -1,0 +1,18 @@
+@model AccountStatementVm
+@{ ViewData["Title"] = "Cash book"; }
+<div class="page-head">
+    <div><h1>Cash book</h1><p class="sub">Every receipt and payment across all cash and bank accounts, @Fmt.Date(Model.From) to @Fmt.Date(Model.To).</p></div>
+    <div class="actions"><partial name="_ExportLink" /></div>
+</div>
+<form method="get" class="sheet filters">
+    <div><label class="form-label small">From</label><input type="date" name="from" value="@Fmt.Iso(Model.From)" class="form-control" /></div>
+    <div><label class="form-label small">To</label><input type="date" name="to" value="@Fmt.Iso(Model.To)" class="form-control" /></div>
+    <div><button class="btn btn-primary" type="submit">Update</button></div>
+</form>
+<div class="figures">
+    <div class="figure"><div class="label">Opening cash</div><div class="value">@Fmt.Signed(Model.Opening)</div></div>
+    <div class="figure"><div class="label">Money in</div><div class="value dr">@Fmt.Money(Model.TotalDebit)</div></div>
+    <div class="figure"><div class="label">Money out</div><div class="value cr">@Fmt.Money(Model.TotalCredit)</div></div>
+    <div class="figure"><div class="label">Closing cash</div><div class="value">@Fmt.Signed(Model.Closing)</div></div>
+</div>
+<div class="sheet flush"><partial name="_StatementTable" model="Model" /></div>

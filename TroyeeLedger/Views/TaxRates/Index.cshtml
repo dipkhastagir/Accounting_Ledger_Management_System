@@ -1,0 +1,20 @@
+@model List<TaxRate>
+@{ ViewData["Title"] = "VAT rates"; bool isAdmin = User.IsInRole("Admin"); }
+<div class="page-head">
+    <div><h1>VAT rates</h1><p class="sub">Rates offered by the "Add VAT line" helper on the voucher screen.</p></div>
+    <div class="actions"><a class="btn btn-outline-primary" asp-controller="Reports" asp-action="Vat">VAT summary</a>
+        @if (isAdmin) { <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> New rate</a> }</div>
+</div>
+<div class="sheet flush">
+    <table class="ledger">
+        <thead><tr><th>Name</th><th>Kind</th><th class="num">Rate</th><th>Posts to</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr><td>@t.Name</td><td class="small-print">@t.Kind.Display()</td><td class="num">@t.RatePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%</td><td class="small-print">@t.Account?.Code @t.Account?.Name</td>
+                <td>@if (t.IsActive) { <span class="chip st-posted">Active</span> } else { <span class="chip st-draft">Inactive</span> }</td>
+                <td class="text-end">@if (isAdmin) { <a asp-action="Edit" asp-route-id="@t.Id" title="Edit"><i class="bi bi-pencil"></i></a> }</td></tr>
+        }
+        </tbody>
+    </table>
+</div>

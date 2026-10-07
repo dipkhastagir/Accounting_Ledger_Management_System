@@ -1,0 +1,14 @@
+@model Party
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+<input type="hidden" asp-for="Id" />
+<div class="row g-3">
+    <div class="col-md-3"><label asp-for="Code" class="form-label"></label><input asp-for="Code" class="form-control" /><span asp-validation-for="Code" class="text-danger small"></span></div>
+    <div class="col-md-6"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+    <div class="col-md-3"><label asp-for="PartyType" class="form-label"></label><select asp-for="PartyType" asp-items="Html.GetEnumSelectList<PartyType>()" class="form-select"></select></div>
+    <div class="col-md-4"><label asp-for="Phone" class="form-label"></label><input asp-for="Phone" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /><span asp-validation-for="Email" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="TaxId" class="form-label"></label><input asp-for="TaxId" class="form-control" /></div>
+    <div class="col-md-8"><label asp-for="Address" class="form-label"></label><input asp-for="Address" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="CreditLimit" class="form-label"></label><input asp-for="CreditLimit" class="form-control" type="number" step="0.01" min="0" /><div class="form-text">0 means no limit.</div></div>
+    <div class="col-12"><div class="form-check"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label"></label></div></div>
+</div>

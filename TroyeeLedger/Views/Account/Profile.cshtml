@@ -1,0 +1,40 @@
+@model AppUser
+@{
+    ViewData["Title"] = "My profile";
+    var activity = (List<AuditLog>)ViewBag.Activity;
+}
+<div class="page-head">
+    <div><h1>@Model.FullName</h1><p class="sub">@Model.Role · signed in as @Model.Username</p></div>
+    <div class="actions"><a class="btn btn-outline-primary" asp-action="ChangePassword"><i class="bi bi-key"></i> Change password</a></div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="sheet">
+            <h2>Account</h2>
+            <dl class="kv">
+                <dt>Username</dt><dd>@Model.Username</dd>
+                <dt>Email</dt><dd>@(Model.Email ?? "—")</dd>
+                <dt>Role</dt><dd>@Model.Role</dd>
+                <dt>Member since</dt><dd>@Fmt.Date(Model.CreatedAt)</dd>
+                <dt>Last sign-in</dt><dd>@Fmt.DateTime(Model.LastLoginAt)</dd>
+                <dt>Vouchers created</dt><dd>@ViewBag.Created</dd>
+                <dt>Vouchers approved</dt><dd>@ViewBag.Approved <span class="small-print">(created by others)</span></dd>
+            </dl>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="sheet flush">
+            <h2>Recent activity</h2>
+            <table class="ledger">
+                <thead><tr><th>When</th><th>Action</th><th>Record</th><th>Details</th></tr></thead>
+                <tbody>
+                @foreach (var a in activity)
+                {
+                    <tr><td>@Fmt.DateTime(a.Timestamp)</td><td>@a.Action</td><td>@a.EntityName @a.EntityId</td><td class="small-print">@a.Details</td></tr>
+                }
+                @if (!activity.Any()) { <tr><td colspan="4" class="empty">No activity recorded yet.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
